@@ -1,11 +1,11 @@
-# Interactive Plotting on IPython Notebook: Bokeh & Plotly
+# Interactive Plotting in IPython Notebook (Part 1/2): Bokeh
 ## Summary
-In this post I will talk about interactive plotting packages that support the [IPython Notebook](http://ipython.org/notebook.html) and allow you to zoom, pan, resize, or even hover and get values off your plots directly from an IPython Notebook. This post will focus on [Bokeh](bokeh.pydata.org) and [Plotly](https://plot.ly/). I will also provide some very rudimentary examples that should allow to get started straight away.
+In this post I will talk about interactive plotting packages that support the [IPython Notebook](http://ipython.org/notebook.html) and allow you to zoom, pan, resize, or even hover and get values off your plots directly from an IPython Notebook. This post will focus on [Bokeh](bokeh.pydata.org) while the next post will be about [Plotly](https://plot.ly/). I will also provide some very rudimentary examples that should allow to get started straight away.
 
 ## Interactive Plots: +1 for convenience
 Anyone who's delved into 'exploratory' data analysis requiring a depiction of their results would have inevitably come to the point where they would need to fiddle with plotting settings just to make the result legible (much more work required to make it attractive). One would have to change axes limits, margins, line-widths, etc etc.
 
-Well, with interactive plotting the days of the static plot are dwindling. Packages such as [Bokeh](bokeh.pydata.org) and [Plotly](https://plot.ly/) (see below) save you a lot of that trouble by providing an easily embeddable plot directly into your beloved [IPython Notebook](http://ipython.org/notebook.html) along with a series of 'tools' allowing you to zoom and pan the plot, resize the whole thing, save as a static image, or even hover over the plotted data and get lil' tooltips with their underlying data. A static version of such a plot, which I shamelessly screen-captured from the Plotly website can be seen in the figure below.
+Well, with interactive plotting the days of the static plot are dwindling. Packages such as [Bokeh](bokeh.pydata.org) and [Plotly](https://plot.ly/) (see below) save you a lot of that trouble by providing an easily embeddable plot directly into your beloved [IPython Notebook](http://ipython.org/notebook.html) along with a series of 'tools' allowing you to zoom and pan the plot, resize the whole thing, save as a static image, or even hover over the plotted data and get lil' tooltips with their underlying data. A static version of such a plot, which I shamelessly screen-captured from the [Plotly](https://plot.ly/) website can be seen in the figure below.
 
 ![A static example of a Plotly plot](ExamplePlotPlotly.png)
 
@@ -14,7 +14,7 @@ Well, with interactive plotting the days of the static plot are dwindling. Packa
 
 > Bokeh is a Python interactive visualization library that targets modern web browsers for presentation. Its goal is to provide elegant, concise construction of novel graphics in the style of D3.js, but also deliver this capability with high-performance interactivity over very large or streaming datasets. Bokeh can help anyone who would like to quickly and easily create interactive plots, dashboards, and data applications.
 
-While [Bokeh](bokeh.pydata.org) doesn't have as many bells and whistles as [Plotly](https://plot.ly) (see below), its entirely free and unrestricted and works like a charm within the IPython console and the [IPython Notebook](http://ipython.org/notebook.html).  
+While [Bokeh](bokeh.pydata.org) doesn't have as many bells and whistles as [Plotly](https://plot.ly) (see next post), its entirely free and unrestricted and works like a charm within the IPython console and the [IPython Notebook](http://ipython.org/notebook.html).  
 
 ### Installation
 As with most things, a good place to start is the ['Quick-start' page](http://bokeh.pydata.org/docs/quickstart.html#quickstart). 
@@ -41,7 +41,7 @@ bokeh.plotting.output_notebook()
 
 The first command obviously imports the `bokeh.plotting` module while the second sets the output of any subsequent plotting to be directly 'fed' to your IPython Notebook as the output of a typical cell. The ['Session Management'](http://bokeh.pydata.org/docs/reference.html#session-management) section of the [Bokeh Reference Guide](http://bokeh.pydata.org/docs/reference.html) has more info on the available output options. Should the above code go through without a hitch the output of the cell should read `Configuring embedded BokehJS mode.`
 
-Having Bokeh in place we ready to do some plotting. Here we will calculate the values, coordinates if you will, of a simple sine wave using NumPy. Enter the code below in a subsequent cell:
+Having Bokeh in place we're ready to do some plotting. Here we will calculate the values, coordinates if you will, of a simple sine wave using NumPy. Enter the code below in a subsequent cell:
 
 ```
 import numpy
@@ -59,6 +59,8 @@ bokeh.plotting.show()
 Upon execution, the output of this last cell should be something like what is shown in the figure below. As you can see Bokeh automatically provides tools to pan and zoom the view and even save and resize the plot itself. The plot axes automatically scale and pan themselves to reflect changes imposed by these tools.
 
 ![An example plot of a sine wave created with Bokeh](SinePlotBokeh.png)
+
+You can find an IPython Notebook with the code used to create the above plot [here](https://bitbucket.org/somada141/pyscience/raw/master/20140902_InteractivePlottingBokeh/bokeh.ipynb). Note that the [nbviewer](http://nbviewer.ipython.org/) won't show the plot as it can only display content embedded into the .ipynb file. If you want to reproduce it, download the .ipynb file and open within your own IPython Notebook session.
 
 ### Resources
 Keep in mind that you can customize Bokeh plots till the cows come home. Apart from being able to change the typical display parameters like line-widths etc, you can define which interactive tools appear, as well as add hover-tooltip functionality.
