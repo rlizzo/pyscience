@@ -6,7 +6,7 @@ This repository contains all material, i.e., posts, images, IPython Notebooks, e
 
 The MIT License (MIT)
 
-Copyright (c) 2013 wercker
+Copyright (c) 2013 somada141
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
