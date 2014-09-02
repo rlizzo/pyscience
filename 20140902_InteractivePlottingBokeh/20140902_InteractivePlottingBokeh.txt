@@ -7,7 +7,7 @@ Anyone who's delved into 'exploratory' data analysis requiring a depiction of th
 
 Well, with interactive plotting the days of the static plot are dwindling. Packages such as [Bokeh](bokeh.pydata.org) and [Plotly](https://plot.ly/) (see below) save you a lot of that trouble by providing an easily embeddable plot directly into your beloved [IPython Notebook](http://ipython.org/notebook.html) along with a series of 'tools' allowing you to zoom and pan the plot, resize the whole thing, save as a static image, or even hover over the plotted data and get lil' tooltips with their underlying data. A static version of such a plot, which I shamelessly screen-captured from the [Plotly](https://plot.ly/) website can be seen in the figure below.
 
-![A static example of a Plotly plot](ExamplePlotPlotly.png)
+![A static example of a Plotly plot](https://pyscience.files.wordpress.com/2014/09/wpid-exampleplotplotly.png)
 
 ## [Bokeh](bokeh.pydata.org)
 [Bokeh](bokeh.pydata.org) is a package by Continuum Analytics, authors of the [Anaconda](https://store.continuum.io/cshop/anaconda/) distribution of which I spoke in [this previous post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). If I may quote:
@@ -58,7 +58,7 @@ bokeh.plotting.show()
 
 Upon execution, the output of this last cell should be something like what is shown in the figure below. As you can see Bokeh automatically provides tools to pan and zoom the view and even save and resize the plot itself. The plot axes automatically scale and pan themselves to reflect changes imposed by these tools.
 
-![An example plot of a sine wave created with Bokeh](SinePlotBokeh.png)
+![An example plot of a sine wave created with Bokeh](https://pyscience.files.wordpress.com/2014/09/wpid-sineplotbokeh.png)
 
 You can find an IPython Notebook with the code used to create the above plot [here](https://bitbucket.org/somada141/pyscience/raw/master/20140902_InteractivePlottingBokeh/bokeh.ipynb). Note that the [nbviewer](http://nbviewer.ipython.org/) won't show the plot as it can only display content embedded into the .ipynb file. If you want to reproduce it, download the .ipynb file and open within your own IPython Notebook session.
 
