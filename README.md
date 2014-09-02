@@ -1,6 +1,6 @@
 # README #
 
-This repository contains all material, i.e., posts, images, IPython Notebooks, etc., used in the [pyscience.wordpress.com](pyscience.wordpress.com) blog, dedicated to the topic of Python in scientific endeavors. This blog discusses various topics from visualization, data analysis, high-performance computing, etc.
+This repository contains all material, i.e., posts, images, IPython Notebooks, etc., used in the [pyscience.wordpress.com](pyscience.wordpress.com) blog, dedicated to the topic of Python in scientific endeavors. This blog discusses various topics from visualization and data analysis to high-performance computing, etc.
 
 # License #
 
