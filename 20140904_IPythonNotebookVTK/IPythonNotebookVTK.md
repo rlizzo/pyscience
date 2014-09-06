@@ -153,7 +153,7 @@ We're almost there, we merely create a new `vtkRenderer` object (docs [here](htt
 
 Lastly, remember how our `vtk_show` function needs a `vtkRenderer` instance to function? Well now we have it so all we need to do is call that function as such `vtk_show(VtkRenderer)`. We could define the width and height of the rendering through a call like `vtk_show(VtkRenderer, width=100, height=200)` but we won't bother. Upon execution you should get an image akin to the one in the figure below.
 
-![Rendering of a red sphere through VTK shown directly in IPython Notebook](VtkSphereRender.png)
+![Rendering of a red sphere through VTK shown directly in IPython Notebook](https://pyscience.files.wordpress.com/2014/09/wpid-vtksphererender.png)
 
 You can find an IPython Notebook with the code shown here under [this](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140904_IPythonNotebookVTK/Material/IPythonNotebookVTK.ipynb) link. Note that since we're embedding the resulting render as an `IPython.display.Image` object, the image should be viewable on the [nbviewer](http://nbviewer.ipython.org) which makes it great for portability.
 
