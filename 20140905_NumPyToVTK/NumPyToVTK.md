@@ -7,13 +7,13 @@ Categories: Visualization, IO
 In this post I will show how to 'convert' NumPy arrays to VTK arrays and files by means of the `vtk.util.numpy_support` module and the little-known PyEVTK package respectively.
 
 ## Intro: The Conundrum [sec:intro]##
-I wrote, or rather ranted, in my [previous post](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/) about the value of [VTK](www.vtk.org). Now lets say you were convinced (ha!) and decided to start including [VTK](www.vtk.org) in your scripts for visualization and processing.
+I wrote, or rather ranted, in my [previous post](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/) about the value of [VTK](http://www.vtk.org). Now lets say you were convinced (ha!) and decided to start including [VTK](http://www.vtk.org) in your scripts for visualization and processing.
 
-Well, as if there weren't enough deterrents in employing [VTK](www.vtk.org), you will quickly realize that using your precious data -- which let's face it -- will be stored in NumPy [`ndarray`](http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html) objects, with [VTK](www.vtk.org) ain't all that straightforward. And why would it be? [VTK](www.vtk.org) was made in C++ and C++ isn't about ease-of-use and concise programing. C++ is about putting hair on your chest :).
+Well, as if there weren't enough deterrents in employing [VTK](http://www.vtk.org), you will quickly realize that using your precious data -- which let's face it -- will be stored in NumPy [`ndarray`](http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html) objects, with [VTK](http://www.vtk.org) ain't all that straightforward. And why would it be? [VTK](http://www.vtk.org) was made in C++ and C++ isn't about ease-of-use and concise programing. C++ is about putting hair on your chest :).
 
-The traditional/ugly way, is creating new [VTK](www.vtk.org) objects, setting a bunch of properties like dimensions etc, and looping over your NumPy data to copy and populate your new objects. Since, looping in Python must be avoided like the black plague I will be focusing on the two ways I prefer. 
+The traditional/ugly way, is creating new [VTK](http://www.vtk.org) objects, setting a bunch of properties like dimensions etc, and looping over your NumPy data to copy and populate your new objects. Since, looping in Python must be avoided like the black plague I will be focusing on the two ways I prefer. 
 
-The first way is using the `vtk.util.numpy_support` module that comes with [VTK](www.vtk.org) and allows you to 'easily' convert your data. The second way is by means of exporting your data into [VTK](www.vtk.org)-readable files using the [PyEVTK package](https://bitbucket.org/pauloh/pyevtk), a way which as you'll see is great if you want to process and/or visualize that data in VTK-based applications.
+The first way is using the `vtk.util.numpy_support` module that comes with [VTK](http://www.vtk.org) and allows you to 'easily' convert your data. The second way is by means of exporting your data into [VTK](http://www.vtk.org)-readable files using the [PyEVTK package](https://bitbucket.org/pauloh/pyevtk), a way which as you'll see is great if you want to process and/or visualize that data in VTK-based applications.
 
 ## Using the `numpy_support` module [sec:vtk] ##
 So, given the popularity of Python and the fact that VTK is exposed in its near entirety to Python, the VTK folk decided to create the `numpy_support` module which resides under `vtk.util`. Of course, given the near-absence of documentation and/or examples, using it is as convoluted as doing anything in VTK. However, I'm here to try and elucidate their usage.
@@ -72,7 +72,7 @@ NumPy_data = NumPy_data.reshape(NumPy_data_shape)
 ## Using the PyEVTK package [sec:pyevtk] ##
 Some time ago, I was struggling with the `numpy_support` module discussed [above][sec:vtk], mostly cause I sucked and didn't think to `ravel` the array, so I started googling and came across [PyEVTK](https://bitbucket.org/pauloh/pyevtk) a great little package by a [Paulo Herrera](https://bitbucket.org/pauloh). While back then, the code relied on C routines which refused to work on Windows platforms, since v0.9 -- v1.0.0 being the current version -- the package is built on pure-Python code and works like a charm.
 
-What `PyEVTK` does, is allow you to save [NumPy](www.numpy.org) arrays straight to different types of [VTK XML-based file formats](www.vtk.org/VTK/img/file-formats.pdf) (not the old legacy ones), without even needing to have [VTK](www.vtk.org) installed in your system, making [NumPy](www.numpy.org) the only dependency. This way, you can easily save your NumPy arrays into files that can be visualized and processed with any of the flagship VTK applications such as [ParaView](www.paraview.org), [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/), [Mayavi](http://code.enthought.com/projects/mayavi/), while obviously you can easily load said files with [VTK](www.vtk.org) and use all the goodies the toolkit offers.
+What `PyEVTK` does, is allow you to save [NumPy](http://www.numpy.org/) arrays straight to different types of [VTK XML-based file formats](http://www.vtk.org/VTK/img/file-formats.pdf) (not the old legacy ones), without even needing to have [VTK](http://www.vtk.org) installed in your system, making [NumPy](http://www.numpy.org/) the only dependency. This way, you can easily save your NumPy arrays into files that can be visualized and processed with any of the flagship VTK applications such as [ParaView](http://www.paraview.org), [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/), [Mayavi](http://code.enthought.com/projects/mayavi/), while obviously you can easily load said files with [VTK](http://www.vtk.org) and use all the goodies the toolkit offers.
 
 However, while I'm supremely grateful to [Mr. Herrera](https://bitbucket.org/pauloh) for creating PyEVTK, the package wasn't hosted on [PyPI](https://pypi.python.org/pypi/) and could only be used by checking out the code from the [original repository in BitBucket](https://bitbucket.org/pauloh/pyevtk), and using [`distutils`](https://docs.python.org/2/distutils/) to build/install it via the good ol' fashioned `python setup.py install`.
 
@@ -87,9 +87,9 @@ pip install pyevtk
 ### Usage [sec:pyevtk:usage] ###
 I'm gonna give a quick example here to show you how to save a NumPy array as a rectilinear-grid file with a `.vtr` extension. In the interest of consistently misappropriating other people's code, I modified the code for creating a [Julia set](http://en.wikipedia.org/wiki/Julia_set) from [Ted Burke's](http://batchloaf.wordpress.com/) post [here](http://batchloaf.wordpress.com/2013/02/10/creating-julia-set-images-in-python/). I just thought I'd use a pretty dataset for my demo :)
 
-Here, however, I'm only going to show the PyEVTK part of the code while you can see the full thing under this ??? notebook. The result of the Julia code is the following pretty 2D array which was visualized with [Plotly's `Heatmap` method](https://plot.ly/python/heatmaps/) (see [this previous post](https://pyscience.wordpress.com/2014/09/02/interactive-plotting-in-ipython-notebook-part-22-plotly-2/) on how to use Plotly):
+Here, however, I'm only going to show the PyEVTK part of the code while you can see the full thing under [this IPython Notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140905_NumPyToVTK/Material/DemoPyEVTK.ipynb). The result of the Julia code is the following pretty 2D array which was visualized with [Plotly's `Heatmap` method](https://plot.ly/python/heatmaps/) (see [this previous post](https://pyscience.wordpress.com/2014/09/02/interactive-plotting-in-ipython-notebook-part-22-plotly-2/) on how to use Plotly):
 
-![A Julia set visualized with Plotly](julia.png)
+![A Julia set visualized with Plotly](https://pyscience.files.wordpress.com/2014/09/wpid-julia.png)
 
 So, here's the PyEVTK part of the notebook:
 
@@ -116,7 +116,7 @@ As you guessed the magic happens with this one line:
 gridToVTK("./julia", x, y, z, cellData = {'julia': juliaStacked})
 ```
 
-As you can see, we pass the path to the file **without an extension** which will be automatically defined by PyEVTK depending on which function you used in order to create the appropriate VTK file. Subsequently, we pass the three coordinate axes, and provide a Python dictionary with a name for the array and the array itself. Doesn't get easier than that :). The result of the above is `.vtr` file which you can find here while the IPython Notebook of the entire code can be found here
+As you can see, we pass the path to the file **without an extension** which will be automatically defined by PyEVTK depending on which function you used in order to create the appropriate VTK file. Subsequently, we pass the three coordinate axes, and provide a Python dictionary with a name for the array and the array itself. Doesn't get easier than that :). The result of the above is `.vtr` file which you can find [here](https://bitbucket.org/somada141/pyscience/raw/master/20140905_NumPyToVTK/Material/julia.vtr) while the IPython Notebook of the entire code can be found [here](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140905_NumPyToVTK/Material/DemoPyEVTK.ipynb).
 
 ### Resources [sec:pyevtk:resources] ###
 
