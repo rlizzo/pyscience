@@ -108,7 +108,7 @@ pyplot.pcolormesh(x, y, numpy.flipud(ArrayDicom[:, :, 80]))
 
 which results in the following image:
 
-![A plot of my head's DICOM data](MyHeadSlice.png)
+![A plot of my head's DICOM data](https://pyscience.files.wordpress.com/2014/09/wpid-myheadslice.png)
 
 ## Reading DICOM through VTK [sec:vtk] ##
 Now while skimming the previous section you might have thought 'pfff that's way too easy, why did we bother reading your rants?'. Well, in the interest of keeping you interested, I decided -- against my better judgement -- to provide the VTK approach to the above process.
