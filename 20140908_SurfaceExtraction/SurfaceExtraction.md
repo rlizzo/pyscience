@@ -1,7 +1,7 @@
 Title: Surface Extraction: Creating a mesh from pixel-data using Python and VTK
 Author: Adamos Kyriakou
 Date: Friday September 8th, 2014
-Tags: Python, DICOM, VTK, Medical Image Processing, Plotly, Marching Cubes, Surface Extraction, Image Segmentation
+Tags: Python, DICOM, VTK, Medical Image Processing, Plotly, Marching Cubes, Surface Extraction, Image Segmentation, STL
 Categories: Image Processing, IO, Visualization
 
 In this post I will demonstrate how to use VTK to read in a series of DICOM files from a CT examination and extract a mesh surface of the bone structures. I will then show you how to visualize the mesh with VTK and save it, the mesh that is, into an STL file.
@@ -91,7 +91,7 @@ plotHeatmap(numpy.rot90(ArrayDicom[:, 256, :]))
 
 We create this nifty little plot seen below of a cross-section through the body. Note that we use `numpy.rot90` to rotate the image data by `90 deg` to make the resulting plot more 'legible'. You will see that the air surrounding the body has a HU value of `-1000`, soft tissue like brain-matter has HU values of `20 - 50`, while bone-structures range from ca. `400` HU and up. Just the type of values we would expect based on the [Hounsfield scale](http://en.wikipedia.org/wiki/Hounsfield_scale).
 
-![Plot of a cross-section through the CT data after reading them in with VTK and plotting the with Plotly](HeatmapSlice01.png)
+![Plot of a cross-section through the CT data after reading them in with VTK and plotting the with Plotly](https://pyscience.files.wordpress.com/2014/09/wpid-heatmapslice01.png)
 
 > As you might remember from the [Plotly post](http://pyscience.wordpress.com/2014/09/02/interactive-plotting-in-ipython-notebook-part-22-plotly-2/), the resulting plot is very much interactive allowing for zoom, pan, and hover-tooltip operations. However, WordPress wouldn't allow me to embed it in this post, some paranoid security feature I guess, so do check it on the [accompanying notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140908_SurfaceExtraction/Material/SurfaceExtractionVTK.ipynb) and explore the HU values of the different tissues.
 
@@ -118,7 +118,7 @@ We then call `threshold.ReplaceInOn()` which tells `threshold` that we intend to
 
 Lastly, we just call `threshold.Update()`, thus enforcing the thresholding and presto! A quick plot with Plotly as we did before shows us the thresholded array below.
 
-![Plot of a cross-section through the CT data after thresholding](HeatmapSlice02.png)
+![Plot of a cross-section through the CT data after thresholding](https://pyscience.files.wordpress.com/2014/09/wpid-heatmapslice02.png)
 
 ### Extracting the surface
 So here we are, the most interesting and yet shortest part of the code, i.e., the surface extraction. At this point, we have the 'boolean-array' we created above by means of thresholding which can be considered to be a label-field with only two labels: `1` for the bones and `0` for everything else.
@@ -179,7 +179,7 @@ What's new here is our manipulation of the scene's camera. Before we pass the `v
 
 After tossing the `renderer` to `vtk_show` as such `vtk_show(renderer, 600, 600)`, we get a nice 600x600 render which you can see below.
 
-![A VTK rendering of the extracted surface](ExtractedSurface01.png)
+![A VTK rendering of the extracted surface](https://pyscience.files.wordpress.com/2014/09/wpid-extractedsurface01.png)
 
 > Don't be alarmed by all those little specks flying around the skull and the vertebral column. It just means we were too lenient with our thresholding and should have set it higher than `400`. The stuff in front of the vertebrae are parts of the [laryngeal skeleton](http://en.wikipedia.org/wiki/Larynx), while those little tendrils around the skull are most likely segments of the [cranial vasculature](http://ebsco.smartimagebase.com/cranial-vasculature/view-item?ItemID=69635). Good segmentation, isn't as easy or straightforward as I (hope I've) made it seem.
 
