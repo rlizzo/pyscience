@@ -1,13 +1,13 @@
 # Interactive Plotting in IPython Notebook (Part 2/2): Plotly #
 ## Summary ##
-In [this previous post](http://pyscience.wordpress.com/2014/09/01/interactive-plotting-in-ipython-notebook-part-12-bokeh/) I talked about interactive plotting packages that support the [IPython Notebook](http://ipython.org/notebook.html) and focused on [Bokeh](bokeh.pydata.org).  Today I'll be talking about [Plotly](https://plot.ly/), a much richer package that allows for a lot more functionality. I will also provide some very rudimentary examples that should allow you to get started straight away.
+In [this previous post](http://pyscience.wordpress.com/2014/09/01/interactive-plotting-in-ipython-notebook-part-12-bokeh/) I talked about interactive plotting packages that support the [IPython Notebook](http://ipython.org/notebook.html) and focused on [Bokeh](http://bokeh.pydata.org/).  Today I'll be talking about [Plotly](https://plot.ly/), a much richer package that allows for a lot more functionality. I will also provide some very rudimentary examples that should allow you to get started straight away.
 
 ## [Plotly](https://plot.ly/) ##
-[Plotly](https://plot.ly/) is in a lot of ways similar to [Bokeh](bokeh.pydata.org) of which I've spoken in the [previous post](http://pyscience.wordpress.com/2014/09/01/interactive-plotting-in-ipython-notebook-part-12-bokeh/) . However, I personally find it to be prettier, sexier, more convenient, offering much more functionality, and altogether a more well-rounded solution to your interactive plotting needs.
+[Plotly](https://plot.ly/) is in a lot of ways similar to [Bokeh](http://bokeh.pydata.org/) of which I've spoken in the [previous post](http://pyscience.wordpress.com/2014/09/01/interactive-plotting-in-ipython-notebook-part-12-bokeh/) . However, I personally find it to be prettier, sexier, more convenient, offering much more functionality, and altogether a more well-rounded solution to your interactive plotting needs.
 
 Not only does it offer a lot of 'basic' 2D plot types, while I know for a fact that the devs have been working on 3D plots as well, but it allows for real-time streaming data plots, online editing of your plots and data, a slew of APIs for different languages, and a whole wealth of features which you just can't find elsewhere.
 
-On the other hand, [Plotly](https://plot.ly/) isn't entirely free. Sure the basic free plan allows you to create as many plots as you want but they're all public and can be viewed by anyone. Should you want privacy, however, you gotta [pony up the dough](https://plot.ly/product/plans/), and at 12$/month one might find it kinda steep. In addition, unlike [Bokeh](bokeh.pydata.org) , which serves the plots locally, [Plotly](https://plot.ly/) does so through their own servers (unless you go for an enterprise-behind-my-own-firewall-solution) and needs to upload your data to do so. Thus, get ready for some notable lag.
+On the other hand, [Plotly](https://plot.ly/) isn't entirely free. Sure the basic free plan allows you to create as many plots as you want but they're all public and can be viewed by anyone. Should you want privacy, however, you gotta [pony up the dough](https://plot.ly/product/plans/), and at 12$/month one might find it kinda steep. In addition, unlike [Bokeh](http://bokeh.pydata.org/) , which serves the plots locally, [Plotly](https://plot.ly/) does so through their own servers (unless you go for an enterprise-behind-my-own-firewall-solution) and needs to upload your data to do so. Thus, get ready for some notable lag.
 
 Nonetheless, Plotly is a gorgeous lil' tool and IMHO in a league of its own among other tools, both in terms of features and ease of use.
 
@@ -18,7 +18,7 @@ At the time of writing, [Plotly](https://plot.ly/) isn't hosted on the [conda](c
 pip install plotly
 ```
 
-Upon successful installation, the package should now be available for `import` for IPython console and [IPython Notebook](ipython.org/notebook.html) sessions.
+Upon successful installation, the package should now be available for `import` for IPython console and [IPython Notebook](http://ipython.org/notebook.html) sessions.
 
 > The aforementioned conda repos can be found [here](http://repo.continuum.io/pkgs/) for different platforms but one can easily use the `conda search` command and see whether a particular package, and which versions of said package, exists within the repos.
 
