@@ -1,20 +1,20 @@
 # Interactive Plotting in IPython Notebook (Part 1/2): Bokeh
 ## Summary
-In this post I will talk about interactive plotting packages that support the [IPython Notebook](http://ipython.org/notebook.html) and allow you to zoom, pan, resize, or even hover and get values off your plots directly from an IPython Notebook. This post will focus on [Bokeh](bokeh.pydata.org) while the next post will be about [Plotly](https://plot.ly/). I will also provide some very rudimentary examples that should allow to get started straight away.
+In this post I will talk about interactive plotting packages that support the [IPython Notebook](http://ipython.org/notebook.html) and allow you to zoom, pan, resize, or even hover and get values off your plots directly from an IPython Notebook. This post will focus on [Bokeh](http://bokeh.pydata.org/) while the next post will be about [Plotly](https://plot.ly/). I will also provide some very rudimentary examples that should allow to get started straight away.
 
 ## Interactive Plots: +1 for convenience
 Anyone who's delved into 'exploratory' data analysis requiring a depiction of their results would have inevitably come to the point where they would need to fiddle with plotting settings just to make the result legible (much more work required to make it attractive). One would have to change axes limits, margins, line-widths, etc etc.
 
-Well, with interactive plotting the days of the static plot are dwindling. Packages such as [Bokeh](bokeh.pydata.org) and [Plotly](https://plot.ly/) (see below) save you a lot of that trouble by providing an easily embeddable plot directly into your beloved [IPython Notebook](http://ipython.org/notebook.html) along with a series of 'tools' allowing you to zoom and pan the plot, resize the whole thing, save as a static image, or even hover over the plotted data and get lil' tooltips with their underlying data. A static version of such a plot, which I shamelessly screen-captured from the [Plotly](https://plot.ly/) website can be seen in the figure below.
+Well, with interactive plotting the days of the static plot are dwindling. Packages such as [Bokeh](http://bokeh.pydata.org/) and [Plotly](https://plot.ly/) (see below) save you a lot of that trouble by providing an easily embeddable plot directly into your beloved [IPython Notebook](http://ipython.org/notebook.html) along with a series of 'tools' allowing you to zoom and pan the plot, resize the whole thing, save as a static image, or even hover over the plotted data and get lil' tooltips with their underlying data. A static version of such a plot, which I shamelessly screen-captured from the [Plotly](https://plot.ly/) website can be seen in the figure below.
 
 ![A static example of a Plotly plot](https://pyscience.files.wordpress.com/2014/09/wpid-exampleplotplotly.png)
 
-## [Bokeh](bokeh.pydata.org)
-[Bokeh](bokeh.pydata.org) is a package by Continuum Analytics, authors of the [Anaconda](https://store.continuum.io/cshop/anaconda/) distribution of which I spoke in [this previous post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). If I may quote:
+## [Bokeh](http://bokeh.pydata.org/)
+[Bokeh](http://bokeh.pydata.org/) is a package by Continuum Analytics, authors of the [Anaconda](https://store.continuum.io/cshop/anaconda/) distribution of which I spoke in [this previous post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). If I may quote:
 
 > Bokeh is a Python interactive visualization library that targets modern web browsers for presentation. Its goal is to provide elegant, concise construction of novel graphics in the style of D3.js, but also deliver this capability with high-performance interactivity over very large or streaming datasets. Bokeh can help anyone who would like to quickly and easily create interactive plots, dashboards, and data applications.
 
-While [Bokeh](bokeh.pydata.org) doesn't have as many bells and whistles as [Plotly](https://plot.ly) (see next post), its entirely free and unrestricted and works like a charm within the IPython console and the [IPython Notebook](http://ipython.org/notebook.html).  
+While [Bokeh](http://bokeh.pydata.org/) doesn't have as many bells and whistles as [Plotly](https://plot.ly) (see next post), its entirely free and unrestricted and works like a charm within the IPython console and the [IPython Notebook](http://ipython.org/notebook.html).  
 
 ### Installation
 As with most things, a good place to start is the ['Quick-start' page](http://bokeh.pydata.org/docs/quickstart.html#quickstart). 
