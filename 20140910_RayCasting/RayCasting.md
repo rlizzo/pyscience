@@ -11,17 +11,17 @@ In this post I will demonstrate how to use VTK to perform ray-casting, i.e., int
 ### Background
 Today I'll be talking about [ray-casting](http://en.wikipedia.org/wiki/Ray_casting) which, to quote Wikipedia, is *"the use of ray-surface intersection tests to solve a variety of problems in computer graphics and computational geometry"*. 
 
-A pivotal difference between ray-casting and 'ray-tracing' is that the former only 'casts' a single ray, tests for its intersection with objects, and stops there. Ray-tracing on the other hand is more physically accurate as it integrates physics laws on reflection, refraction, attenuation, etc to 'trace', i.e., follow, that ray and its derivative rays.
+A pivotal difference between ray-casting and 'ray-tracing' is that the former only 'casts' a single ray, tests for its intersection with objects, and stops there. Ray-tracing on the other hand, is more physically accurate as it treats the rays with physics laws on reflection, refraction, attenuation, etc to 'trace', i.e., follow, that ray and its derivative rays.
 
 However, I should make clear that ray-casting is the natural precursor to ray-tracing as it tells us what part of which object the ray intersects with and provides all necessary information to cast subsequent rays.
 
 ### Summary
 Today I'll show how to use Python and VTK to perform ray-casting on surface meshes loaded from [STL](http://en.wikipedia.org/wiki/STL_(file_format)) files and the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) class. 
 
-I will first demonstrate the approach on a very simple model of a hollow sphere which was designed in [Rhino3D](http://www.rhino3d.com/) and exported to STL. Upon establishing the approach, I will talk about my very own [`pycaster` package](https://pypi.python.org/pypi/pycaster) which I wrote to wrap the VTK part of the code, simplify the whole process, and provide some additional functionality. Subsequently, I will repeat the process with `pycaster` on the model of the human skull we extracted and saved as an STL file in the [previous post](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/).
+I will first demonstrate the approach on a very simple model of a hollow sphere which was designed in [Rhino3D](http://www.rhino3d.com/) and exported to STL. Upon establishing the approach, I will talk about my very own [`pycaster` package](https://pypi.python.org/pypi/pycaster) which I wrote to wrap the VTK part of the code, simplify the whole process, and provide some additional functionality. Subsequently, I will repeat the ray-casting process with `pycaster` on the model of the human skull we extracted and saved as an STL file in the [previous post](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/).
 
 ## Helper-functions
-As I keep writing new posts I will try my darndest to build upon previously presented snippets in the interest of code-reuse, consistency, and brevity. I will be using utilizing those snippets in the form of 'helper-functions' briefly documenting their function and referencing past posts where they were presented in more detail.
+As I keep writing new posts I will try my darndest to build upon previously presented snippets in the interest of code-reuse, consistency, and brevity. I will be utilizing those snippets in the form of 'helper-functions', briefly documenting their function and referencing past posts where they were presented in more detail.
 
 The following helper-functions will be used:
 
@@ -53,7 +53,7 @@ Similarly to how one writes an STL file (shown in this [previous post](http://py
 The mesh is then stored internally in a [`vtkPolyData`](http://www.vtk.org/doc/nightly/html/classvtkPolyData.html) object, a pointer to which we retrieve through `GetOutput` and store under `polydata` which we eventually return. A point of interest in the above code lies in the usage of the `GetNumberOfPoints` method of the `vtkPolyData` class through which we check if the `vtkSTLReader` object managed to read in anything. As I've said time and time again, VTK is not big on throwing exceptions or giving warnings. Thus, one should always check that the operation was indeed successful.  
 
 ## Ray-Casting with Python & VTK
-In this example I will show the pure Python+VTK code so you can understand the entire process. You can find the corresponding notebook [here](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSphereVTK.ipynb), while the STL model of the hollow-sphere can be download [here](https://bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/sphereHollow.stl).
+In this example I will show the pure Python+VTK code so you can understand the entire process, while the simpler `pycaster` version will follow . You can find the corresponding notebook [here](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSphereVTK.ipynb), while the STL model of the hollow-sphere can be download [here](https://bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/sphereHollow.stl).
 
 ### Loading and rendering the mesh
 Initially we load and render the mesh-surface of the hollow sphere using the `loadSTL` and `vtk_show` helper-functions presented prior:
@@ -113,7 +113,7 @@ obbTree.SetDataSet(mesh)
 obbTree.BuildLocator()
 ```
 
-That's it! We now have a world-class intersection tester at our disposal. We create a new `vtkOBBTree` under `obbTree`, set our `mesh` as its dataset through `SetDataSet`, and call `BuildLocator` which will create the OBB tree, and allows super-fast intersection testing :).
+That's it! We now have a world-class intersection tester at our disposal. We create a new `vtkOBBTree` under `obbTree`, set our `mesh` as its dataset through `SetDataSet`, and call `BuildLocator` which will create the OBB tree, and allow for super-fast intersection testing :).
 
 Before we proceed I want you to check the docs for the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html). The method we'll be using is `IntersectWithLine` which as you can see sports 4 overloaded versions. The signature of the one we'll be using is the following:
 
@@ -130,7 +130,7 @@ pointsVTKintersection = vtk.vtkPoints()
 code = obbTree.IntersectWithLine(pSource, pTarget, pointsVTKintersection, None)
 ```
 
-As you can see we create a new [`vtkPoints`](http://www.vtk.org/doc/nightly/html/classvtkPoints.html) object, as required by the `IntersectWithLine` signature, which we call `pointsVTKintersection`. We then pass the 'source' and 'target' coordinates of the ray along with 'pointsVTKintersection' where the intersection points will be stored. Lastly, we're using `None` for `cellIds` which will be interpreted as `NULL` as we don't want that information. 
+As you can see we create a new [`vtkPoints`](http://www.vtk.org/doc/nightly/html/classvtkPoints.html) object, as required by the `IntersectWithLine` signature, which we call `pointsVTKintersection`. We then pass the `pSource` and `pTarget` coordinates of the ray along with `pointsVTKintersection` where the intersection points will be stored. Lastly, we're using `None` for `cellIds` which will be interpreted as `NULL` as we don't want that information. 
 
 > Notice the `code` variable which stores the return value of `IntersectWithLine`? As you saw in this method's docstring, a particular 'code' is returned depending on the result of the intersection test. It'd be a very good idea to always 'check' that value and ensure that intersection points were indeed found.
 
@@ -146,7 +146,7 @@ for idx in range(noPointsVTKIntersection):
     pointsIntersection.append(_tup)
 ```
 
-As you can see, we first need to 'extract' the actual [`vtkDataArray`](http://www.vtk.org/doc/nightly/html/classvtkDataArray.html) from `pointsVTKintersection` using the `GetData` method, which we then assign to `pointsVTKIntersectionData` (lengthy name, I know). We then get the number of intersection points found through `pointsVTKIntersectionData.GetNumberOfTuples()` as every point will be stored as a 3-value tuple of the 3D coordinates. We then create an empty `list` under `pointsIntersection` which will store all those tuples. Subsequently, we loop through those tuples stored in `pointsVTKIntersectionData`, acquiring each of them through the `GetTuple3` method, appending each tuple in the `pointsIntersection` list. A simple `print` shows us those coordinates:
+As you can see, we first need to 'extract' the actual [`vtkDataArray`](http://www.vtk.org/doc/nightly/html/classvtkDataArray.html) from `pointsVTKintersection` using the `GetData` method, which we then assign to `pointsVTKIntersectionData` (lengthy name, I know). We then get the number of intersection points found through `pointsVTKIntersectionData.GetNumberOfTuples()` as every point will be stored as a 3-value tuple of the 3D coordinates. We create an empty `list` under `pointsIntersection` which will store all those tuples. Subsequently, we loop through those tuples stored in `pointsVTKIntersectionData`, acquiring each of them through the `GetTuple3` method, appending each tuple in the `pointsIntersection` list. A simple `print` shows us those coordinates:
 
 ```
 [(-24.91461181640625, 0.0, 0.0),
@@ -155,7 +155,7 @@ As you can see, we first need to 'extract' the actual [`vtkDataArray`](http://ww
  (24.91461181640625, 0.0, 0.0)]
 ```
 
-Finally, using the `addPoint` and `vtk_show` helper functions we loop through these points and render (in blue) them as such:
+Finally, using the `addPoint` and `vtk_show` helper functions we loop through these points and render them (in blue) as such:
 
 ```
 for p in pointsIntersection:
@@ -186,7 +186,7 @@ pip install pycaster
 As expected `pycaster` depends on VTK which, if not already installed, might be a hassle to install through `pip`. If you run into trouble with the installation the I suggest you read my [first post on Anaconda](pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), follow the instructions to create a nice environment, e.g., `py27`, and install `pycaster` as such:
 
 ```
-source activate py27
+source activate py27  # use 'activate py27' on Windows
 conda install vtk
 conda install nose
 pip install pycaster --no-deps
@@ -286,6 +286,8 @@ Check these past posts which were used and referenced today:
 ---
 
 Thus concludes another humble post. I hope you enjoyed the whole ray-casting experience as it can be the cornerstone to a **lot** of super-interesting ray-tracing projects. Off the top of my head you can write code for ray-tracing renderers, ray-tracing physics simulations in optics and acoustics, while ray-casting and ray-tracing is heavily used in game-development (collision detection, rendering, etc).
+
+However, there's a fair amount of work/code required to get from this example to a ray-tracer as you need to find the mesh-cells where intersection happens, calculate their normal vectors, calculate the reflected/diffracted ray vectors, etc etc. I'm going to show you a lot of this functionality next week in a post dedicated to ray-tracing with VTK.
 
 The material presented here has been tested extensively so you shouldn't have any trouble reproducing the whole thing. However, if you do then feel free to drop me a comment here and I'll try to help.
 
