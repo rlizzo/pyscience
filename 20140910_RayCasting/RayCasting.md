@@ -76,7 +76,7 @@ vtk_show(renderer)
 
 If you're still having trouble getting this code then do read the [past post about VTK integration with an IPython Notebook](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/). The only novelty here is the `GetProperty` method of the [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) class. This method returns a pointer to this actor's [`vtkProperty`](http://www.vtk.org/doc/nightly/html/classvtkProperty.html) object which we can then use to set a whole bunch of visual properties such as the color, visibility of edges, lighting, shading, etc. In this case, we use it to set this actor's 'opacity' through the `SetOpacity` method to `25%` so we can see 'inside' the surface. Lastly, I want to emphasize that the [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) is stored under the `renderer` variable to which we'll keep adding actors as we proceed while `mesh` holds a pointer to the [`vtkPolyData`](http://www.vtk.org/doc/nightly/html/classvtkPolyData.html) loaded from the STL file. The above code yields the below figure. 
 
-![Rendering of the hollow sphere with 25% opacity](SphereHollow01.png)
+![Rendering of the hollow sphere with 25% opacity](https://pyscience.files.wordpress.com/2014/09/wpid-spherehollow01.png)
 
 ### Preparing and rendering the ray
 
@@ -100,7 +100,7 @@ vtk_show(renderer)
 
 As you can see the 'source' point will be rendered as red, while the 'target' is green. After adding the three actors, we simply use `vtk_show` again and get the following figure.
 
-![Rendering of the hollow sphere with the ray](SphereHollow02.png)
+![Rendering of the hollow sphere with the ray](https://pyscience.files.wordpress.com/2014/09/wpid-spherehollow02.png)
 
 ### Testing for intersection
 Now here comes the fun part! At this point we have the surface-mesh under the `mesh` variable and we've configured the ray, defined by the coordinates in `pSource` and `pTarget`, we want to test for intersection with. The heart of this approach, however, lies in the usage of [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) which generates a [oriented bounding-box](http://en.wikipedia.org/wiki/Minimum_bounding_box) 'tree' for the given geometry (the mesh in our case).
@@ -165,7 +165,7 @@ vtk_show(renderer)
 
 yielding the figure below.
 
-![Rendering of the hollow sphere with the ray and intersection points](SphereHollow03.png)
+![Rendering of the hollow sphere with the ray and intersection points](https://pyscience.files.wordpress.com/2014/09/wpid-spherehollow03.png)
 
 ## Ray-Casting with `pycaster`
 
@@ -183,7 +183,7 @@ If you want to jump straight in then installing `pycaster` is as easy as:
 pip install pycaster
 ```
 
-As expected `pycaster` depends on VTK which, if not already installed, might be a hassle to install through `pip`. If you run into trouble with the installation the I suggest you read my [first post on Anaconda](pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), follow the instructions to create a nice environment, e.g., `py27`, and install `pycaster` as such:
+As expected `pycaster` depends on VTK which, if not already installed, might be a hassle to install through `pip`. If you run into trouble with the installation the I suggest you read my [first post on Anaconda](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), follow the instructions to create a nice environment, e.g., `py27`, and install `pycaster` as such:
 
 ```
 source activate py27  # use 'activate py27' on Windows
@@ -192,7 +192,7 @@ conda install nose
 pip install pycaster --no-deps
 ```
 
-In this example I will show how to use `pycaster` to repeat the above process but this time I'll be doing so on the STL model of the human skull we extracted in the [previous post about surface-extraction](pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/). You can find the corresponding notebook [here](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSkullPyCaster.ipynb), while the STL model of the skull can be download [here](https://bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/bones.stl). I've also repeated the hollow-sphere example we saw above with `pycaster` which you can find in [this](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSpherePyCaster.ipynb) notebook.
+In this example I will show how to use `pycaster` to repeat the above process but this time I'll be doing so on the STL model of the human skull we extracted in the [previous post about surface-extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/). You can find the corresponding notebook [here](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSkullPyCaster.ipynb), while the STL model of the skull can be download [here](https://bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/bones.stl). I've also repeated the hollow-sphere example we saw above with `pycaster` which you can find in [this](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSpherePyCaster.ipynb) notebook.
 
 > The VTK rendering parts of the code we saw before are still the same so I won't be repeating them here. Please check the [notebook for this example](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/PythonRayCastingSkullPyCaster.ipynb).
 
@@ -210,7 +210,7 @@ As you can see we initially `import` the `pycaster` module `from` the `pycaster`
 
 Using the same VTK code to render the `mesh`, which now resides under `caster.mesh`, we get the next figure.
 
-![Render of the human skull](Skull01.png)
+![Render of the human skull](https://pyscience.files.wordpress.com/2014/09/wpid-skull01.png)
 
 > You might notice that the skull rendered above displays a much cleaner surface than what we extracted in the ['Surface Extraction: Creating a mesh from pixel-data using Python and VTK'](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/) post. Well, to be honest I cheated a tad and edited the model through [Rhino3D](http://www.rhino3d.com/) and [Geomagic Studio](http://www.geomagic.com/en/products/studio/overview/). I did so to place the model around the cartesian origin point, thus eliminating the need to reposition the scene camera, to get rid of all those disjoint meshes, and to clean spikes and holes.
 
@@ -224,7 +224,7 @@ pTarget = [0.0, 0.0, 0.0]
 
 We then use the same VTK code as before to render that ray (prior to the actual intersection) resulting in the following figure.
 
-![Render of the human skull with the ray prior to intersection](Skull02.png)
+![Render of the human skull with the ray prior to intersection](https://pyscience.files.wordpress.com/2014/09/wpid-skull02.png)
 
 ### Testing for intersection and extracting the intersection point coordinates
 Now here comes why I bothered writing `pycaster`. As you saw in the VTK example before, at this point we would need to create and initialize the `vtkOBBTree`, create empty `vtkPoints` objects, test for intersection, and then convert the coordinates to `tuple` objects. However, with `pycaster` the whole process is much simpler.
@@ -245,7 +245,7 @@ which returns a `list` of `tuple` under `pointsIntersection`. As you can see we 
 
 Using the same VTK rendering approach to display the intersection points as last time we get the following figure.
 
-![Render of the human skull with the cast ray and intersection points](Skull03.png)
+![Render of the human skull with the cast ray and intersection points](https://pyscience.files.wordpress.com/2014/09/wpid-skull03.png)
 
 ### The `calcDistanceInSolid` method
 I should mention another method within the `rayCaster` class which IMHO is very useful. The method is called `calcDistanceInSolid` and its called in the same way as `castRay`, i.e., by providing the ray coordinates.
