@@ -1,4 +1,4 @@
-Title: Ray Casting: Intersecting lines/rays with surface meshes using Python and VTK
+Title: Ray Casting with Python and VTK: Intersecting lines/rays with surface meshes
 Author: Adamos Kyriakou
 Date: Friday September 15th, 2014
 Tags: Python, IPython Notebook, VTK, STL, Ray Tracing, Ray Casting
