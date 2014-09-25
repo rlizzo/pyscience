@@ -4,7 +4,9 @@ Date: Friday September 17th, 2014
 Tags: Python, IPython Notebook, VTK, STL, Ray Tracing, Ray Casting
 Categories: Image Processing, Visualization, VTK
 
-In this post I will show how to use VTK to trace rays emanating from the cell-centers of a source mesh, intersecting with another target mesh, and then show you how to cast subsequent rays bouncing off the target. This will include calculating the cell-centers in a mesh, calculating the normal vectors at those cells, vector visualization through glyphs, as well as other elements of visualization like textures and scene-lighting.
+In this post I will show how to use VTK to trace rays emanating from the cell-centers of a source mesh, intersecting with another target mesh, and then show you how to cast subsequent rays bouncing off the target adhering to physical laws. This will include calculating the cell-centers in a mesh, calculating the normal vectors at those cells, vector visualization through glyphs, as well as other elements of visualization like textures and scene-lighting.
+
+---
 
 # Introduction
 
@@ -19,6 +21,8 @@ We will start by creating the 'environment', i.e., the scene, which will compris
 We will calculate the cell centers of the `sun` mesh and cast rays along the directions of the normal vector at each one of those cells. We will then use the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) functionality we presented in the [last post about ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/) to detect which of these rays intersect with `earth`, calculate the appropriate reflected vectors based on the `earth` normal vectors, and cast subsequent rays. 
 
 Now let me be clear, the code that will be presented today can not, by any stretch of the imagination, be called a fully-fledged ray-tracer. However, I will be presenting all necessary tools you would need to write your own ray-tracing algorithms using Python and VTK. 
+
+---
 
 # Ray-Tracing with Python & VTK
 You can find the entire IPython Notebook I'll be presenting today [here](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140917_RayTracing/Material/PythonRayTracingEarthSun.ipynb).  It contains a fair bit of code but it was structured in the same way as this post so you can easily look up the different parts of code and see what they do in detail.
@@ -327,7 +331,7 @@ normalsCalcSun.Update()
 
 So we start by creating a new [`vtkPolyDataNormals`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html) object under `normalsCalcSun` (remember this variable name, we'll be using it lots later on). We then 'connect' this object to the `sun` mesh where we want those normals to be calculated.
 
-The rest is configuring the [`vtkPolyDataNormals`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html) class to give us what we want. You can see what each call does in the comments above but I should stress a few points here. `vtkPolyDataNormals` can calculate the normal vectors at the mesh points and/or cells. However, we only want the latter, so we turn off calculation at points with `ComputePointNormalsOff()` and only enable calculation at cells with `ComputeCellNormalsOn()`. 
+The rest is configuring the [`vtkPolyDataNormals`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html) class to give us what we want. You can see what each call does in the comments above but I should stress a few points here. [`vtkPolyDataNormals`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html) can calculate the normal vectors at the mesh points and/or cells. However, we only want the latter, so we turn off calculation at points with `ComputePointNormalsOff()` and only enable calculation at cells with `ComputeCellNormalsOn()`. 
 
 Subsequently, we turn 'splitting' off through `SplittingOff()`. First of all that only makes sense when calculating point-normals. What it would do is 'split', thus create, multiple normals at points belonging to cells with very sharp edges, i.e., steep angles between cells. However, we only want cell normals so we don't care about it too much.
 
@@ -384,16 +388,16 @@ Subsequently, we create the glyphs. Note that we first create 'arrow', a [`vtkAr
 
 We then create a new [`vtkGlyph3D`](http://www.vtk.org/doc/nightly/html/classvtkGlyph3D.html) object under `glyphSun`. The important thing to note here is the difference between the `SetInputConnection` and `SetSourceConnection` methods. The latter just connect to the 'base' glyph, i.e., the `arrow` in our case. The `SetInputConnection` call is given `dummy_cellCenterCalcSun.GetOutputPort()`, i.e., the normal vectors calculated and then positioned at the cell-centers of the `sun` mesh. 
 
-From there on things are simple, we enforce orientation of the created glyphs to the supplied normal vectors through `SetVectorModeToUseNormal()`, and we provide a 'scale factor' for the base glyphs, which will just uniformly scale the `arrow` and its default size. The rest has been shown a thousand times: we create a `vtkPolyDataMapper` to map the create object to graphics primitives and connect to the `glyphSun` output. We then create a standard `vtkActor`, connect to the aforementioned mapper, and use its `GetProperty()` method to `SetColor(ColorSunGlyphs)`. 
+From there on things are simple, we enforce orientation of the created glyphs to the supplied normal vectors through `SetVectorModeToUseNormal()`, and we provide a 'scale factor' for the base glyphs, which will just uniformly scale the `arrow` and its default size. The rest has been shown a thousand times: we create a [`vtkPolyDataMapper`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataMapper.html) to map the create object to graphics primitives and connect to the `glyphSun` output. We then create a standard [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html), connect to the aforementioned mapper, and use its `GetProperty()` method to `SetColor(ColorSunGlyphs)`. 
 
 Finally, using the `vtk_show` helper-function yields the following figure. As you can see we have visualized all normal vectors with arrows, showing the direction our `sun` rays will follow.
 
 ![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](Scene04.png)
 
 ## Prepare for ray-tracing
-At this point we finally get to the ray-tracing part of the post. All we now need to do is prepare the `vtkOBBTree` object for `earth` as I showed in the [last post  on ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). If you haven't read it then I strongly recommend that you do now cause I won't explain the details again.
+At this point we finally get to the ray-tracing part of the post. All we now need to do is prepare the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) object for `earth` as I showed in the [last post  on ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). If you haven't read it then I strongly recommend that you do now cause I won't explain the details again.
 
-Firstly, we create a new `vtkOBBTree` object with the `earth` mesh where we're going to test for intersection with rays coming from the `sun`. This is done as simply as this:
+Firstly, we create a new [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) object with the `earth` mesh where we're going to test for intersection with rays coming from the `sun`. This is done as simply as this:
 
 ```
 obbEarth = vtk.vtkOBBTree()
@@ -426,7 +430,7 @@ normalsCalcEarth.Update()
 
 Just remember that `normalsCalcEarth` now holds the normal vectors for the `earth` mesh.
 
-Finally, we define two 'auxiliary-functions' to nicely wrap the intersection testing functionality offered by the `vtkOBBTree` class:
+Finally, we define two 'auxiliary-functions' to nicely wrap the intersection testing functionality offered by the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) class:
 
 ```
 def isHit(obbTree, pSource, pTarget):
@@ -476,9 +480,277 @@ The second function is a little more complex but the mechanics were detailed in 
 In a nutshell it will return two `list` objects `pointsInter` and `cellIdsInter`. The former will contain a series of `tuple` objects with the coordinates of the intersection points. The latter will contain the 'id' of the mesh cells that were 'hit' by that ray. This information is vital as through these ids we'll be able to get the correct normal vector and calculate the appropriate reflected vector as we'll see below.
 
 ## Perform ray-casting operations and visualize different aspects
+Finally the moment you've all been waiting for! The ray-tracing! Now since the code to perform the whole operation is too much to explain in a single go, I decided to repeat the process three times, visualizing and explaining different aspects of it every time.
 
 ### Cast rays, test for intersections, and visualize the rays that hit `earth`
+In this first step we will only cast the rays from the `sun`, test for their intersection, or lack thereof, and render the rays that do hit the `earth` with a different color than the ones that miss it. In addition, we'll also render points at those intersection points as they will be the 'source' points for the reflected rays later on.
+
+The code is the following:
+
+```
+# Extract the normal-vector data at the sun's cells
+normalsSun = normalsCalcSun.GetOutput().GetCellData().GetNormals()
+
+# Loop through all of sun's cell-centers
+for idx in range(pointsCellCentersSun.GetNumberOfPoints()):
+    # Get coordinates of sun's cell center
+    pointSun = pointsCellCentersSun.GetPoint(idx)
+    # Get normal vector at that cell
+    normalSun = normalsSun.GetTuple(idx)
+    
+    # Calculate the 'target' of the ray based on 'RayCastLength'
+    pointRayTarget = n2l(l2n(pointSun) + RayCastLength*l2n(normalSun))
+    
+    # Check if there are any intersections for the given ray
+    if isHit(obbEarth, pointSun, pointRayTarget):  # intersections were found
+        # Retrieve coordinates of intersection points and intersected cell ids
+        pointsInter, cellIdsInter = GetIntersect(obbEarth, pointSun, pointRayTarget)
+        # Render lines/rays emanating from the sun. Rays that intersect are
+        # rendered with a 'ColorRayHit' color
+        addLine(renderer, pointSun, pointsInter[0], ColorRayHit)
+        # Render intersection points
+        addPoint(renderer, pointsInter[0], ColorRayHit)
+    else:
+        # Rays that miss the earth are rendered with a 'ColorRayMiss' colors
+        # and a 25% opacity
+        addLine(renderer, pointSun, pointRayTarget, ColorRayMiss, opacity=0.25)
+        
+vtk_show(renderer, 600, 600)
+```
+
+As you no doubt remember, cause you've been paying attention all this time, the `normalsCalcSun` is a [`vtkPolyDataNormals`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html) object which holds the normal vectors calculated at the cell-centers of the `sun` mesh. As you can see from the 1st line of the code, retrieving the actual normal vector data is easy but no intuitive. First we get all output out through `GetOutput`. However, the output could have point-data and/or cell-data depending on how we configured the class. In our case we want the cell-data which we retrieve through `GetCellData()` followed by `GetNormals()` which will give a set of normal vectors under `normalsSun`.
+
+Afterwards, as we want to cast a ray from every cell-center on the `sun` mesh, we loop through these points stored under `pointsCellCentersSun`. The `idx` variable will hold an index to that point.
+
+We store the coordinates of each such point under `pointSun` through `pointsCellCentersSun.GetPoint(idx)`, while we store the corresponding normal vector under `normalSun` through `normalsSun.GetTuple(idx)`. Now we have the 'source' point and direction our ray should follow.
+
+In our example, however, rays are merely lines of finite length. Due to that we have to define a 'target' point which we want to make sure it won't miss the `earth` due to a small length. To that end I've defined a variable `RayCastLength` under the *Options*, which naturally will define the length of the 'ray'. As such we use the following line (repeating it here) to calculate the coordinates of the 'target' point:
+
+```
+pointRayTarget = n2l(l2n(pointSun) + RayCastLength*l2n(normalSun))
+```
+
+Note that we use the `n2l` and `l2n` helper-functions to quickly convert a `list` or `tuple` object as retrieved from VTK, into a `numpy.ndarray` object and vice-versa. As I mentioned in the *Helper-Functions* section, this conversion allows us to use `numpy` and perform some basic vector-math, which in this case is vector addition and multiplication. 
+
+Now we finally have all we need to cast that pesky ray, i.e. the 'source' and 'target' coordinates! We first use the `isHit` auxiliary-function to cast that ray and see if it intersects with `earth` as such:
+
+`isHit(obbEarth, pointSun, pointRayTarget)`
+
+If we get a `True` back then the ray does indeed intersect and its worth processing further. If not we just render that ray anyway through `addLine` with a `ColorRayMiss` color, and a 25% opacity (in our case resulting in a faded whitish ray).
+
+However, should the ray intersect with `earth` then its worth processing. We then re-cast that ray and retrieve the intersection point coordinates and ids of the `earth` cells the ray hit through the `GetIntersect` auxiliary-function we defined before (repeating the line here):
+
+```
+pointsInter, cellIdsInter = GetIntersect(obbEarth, pointSun, pointRayTarget)
+```
+
+As I explained before, the `pointsInter` variable now holds a `list` of `tuple` objects with the coordinates of each intersection point in order. The `cellIdsInter` contains simple `int` entries with the id of the mesh cells that were this but we won't use that information in this step. What we will however use is `pointsInter[0]`, i.e., the 1st point that was hit by the ray. Note that we consider the `earth` to be a reflective body so we don't care about the following intersection points as the rays that impinge on `earth` are supposed to be reflected entirely.
+
+The rest is super-simple. We just use `addLine` and `addPoint` to render the ray that hits the earth and the 1st intersection point, which under default *Options* should appear as yellow. 
+
+After looping through all cell-centers in the `sun`, cast those rays, and define whether they hit or miss, we finally call `vtk_show` and end up with the next figure.
+
+![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Rays that miss the `earth` are rendered as a transparent white while rays that hit are rendered as yellow](Scene05.png)
 
 ### Visualize the normal vectors at the cells where sun's rays intersect with earth
+During this next step we'll add a lil' more complexity, and visualize the `earth` normal vectors at the points where rays from the `sun` intersect and we'll do so again through glyphs. However, unlike the case where we rendered all normals on the `sun` surface, here we only want to render the normals at points were intersections were detected. Thus, the glyph process is slightly different and allows for more flexibility.
+
+```
+# Extract the normal-vector data at the sun's cells
+normalsSun = normalsCalcSun.GetOutput().GetCellData().GetNormals()
+# Extract the normal-vector data at the earth's cells
+normalsEarth = normalsCalcEarth.GetOutput().GetCellData().GetNormals()
+
+# Create a dummy 'vtkPoints' to act as a container for the point coordinates
+# where intersections are found
+dummy_points = vtk.vtkPoints()
+# Create a dummy 'vtkDoubleArray' to act as a container for the normal
+# vectors where intersections are found
+dummy_vectors = vtk.vtkDoubleArray()
+dummy_vectors.SetNumberOfComponents(3)
+# Create a dummy 'vtkPolyData' to store points and normals
+dummy_polydata = vtk.vtkPolyData()
+
+# Loop through all of sun's cell-centers
+for idx in range(pointsCellCentersSun.GetNumberOfPoints()):
+    # Get coordinates of sun's cell center
+    pointSun = pointsCellCentersSun.GetPoint(idx)
+    # Get normal vector at that cell
+    normalSun = normalsSun.GetTuple(idx)
+
+    # Calculate the 'target' of the ray based on 'RayCastLength'
+    pointRayTarget = n2l(l2n(pointSun) + RayCastLength*l2n(normalSun))
+    
+    # Check if there are any intersections for the given ray
+    if isHit(obbEarth, pointSun, pointRayTarget):
+        # Retrieve coordinates of intersection points and intersected cell ids
+        pointsInter, cellIdsInter = GetIntersect(obbEarth, pointSun, pointRayTarget)
+        # Get the normal vector at the earth cell that intersected with the ray
+        normalEarth = normalsEarth.GetTuple(cellIdsInter[0])
+        
+        # Insert the coordinates of the intersection point in the dummy container
+        dummy_points.InsertNextPoint(pointsInter[0])
+        # Insert the normal vector of the intersection cell in the dummy container
+        dummy_vectors.InsertNextTuple(normalEarth)
+
+# Assign the dummy points to the dummy polydata
+dummy_polydata.SetPoints(dummy_points)
+# Assign the dummy vectors to the dummy polydata
+dummy_polydata.GetPointData().SetNormals(dummy_vectors)
+        
+# Visualize normals as done previously but using 
+# the 'dummyPolyData'
+arrow = vtk.vtkArrowSource()
+
+glyphEarth = vtk.vtkGlyph3D()
+glyphEarth.SetInput(dummy_polydata)
+glyphEarth.SetSourceConnection(arrow.GetOutputPort())
+glyphEarth.SetVectorModeToUseNormal()
+glyphEarth.SetScaleFactor(5)
+
+glyphMapperEarth = vtk.vtkPolyDataMapper()
+glyphMapperEarth.SetInputConnection(glyphEarth.GetOutputPort())
+
+glyphActorEarth = vtk.vtkActor()
+glyphActorEarth.SetMapper(glyphMapperEarth)
+glyphActorEarth.GetProperty().SetColor(ColorEarthGlyphs)
+
+renderer.AddActor(glyphActorEarth)
+
+vtk_show(renderer, 600, 600)
+```
+
+Firstly, we extract the normal vectors for the `sun` and `earth`, much as we did before, and store them under `normalsSun` and `normalsEarth` respectively.
+
+Then, we create two 'dummy' containers that will store the intersection point coordinates (`dummy_points`)  and the `earth` normals (`dummy_vectors`) where `sun` rays intersected. We will use this information to render those, and only those, normals on `earth`. Note that `dummy_points` is of type [`vtkPoints`](http://www.vtk.org/doc/nightly/html/classvtkPoints.html), while `dummy_vectors` is of [`vtkDoubleArray`](http://www.vtk.org/doc/nightly/html/classvtkDoubleArray.html) type. We 'configure' `dummy_vectors` to have `3` components through `SetNumberOfComponents` which are going to be the `3` vector components. Finally, we define `dummy_polydata` of type [`vtkPolyData`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html), which will 'house' the 'dummy' points and vectors and which we will pass to the [`vtkGlyph3D`](http://www.vtk.org/doc/nightly/html/classvtkGlyph3D.html) class later on.
+
+The loop in this step is very similar to the one we presented in the previous step. We simply go through all cell-centers on the `sun` mesh, cast-rays, and test for their intersection. The key difference is that instead of rendering rays, we now use the `cellIdsInter` to get the cell id of the 1st cell, i.e., the cell the `sun` ray first intersects with. We then use that id to retrieve the normal vector on the `earth` where the ray hit as such:
+
+```
+normalEarth = normalsEarth.GetTuple(cellIdsInter[0])
+```
+
+We then use the `InsertNextPoint` and `InsertNextTuple` methods to 'push` the retrieved point coordinates and normal vectors into the dummy containers. Once the loop is complete, we set those points and vectors to the `dummy_polydata` container as points and normals. We do this through the `SetPoints` and `GetPointData().SetNormals()` methods respectively.
+
+The rest is mostly the same as the previous glyph rendering we did for the `sun` normals. The only difference is that the source of the `glyphEarth` object is now the  `dummy_polydata` object we just composed. As you can understand, this approach allowed us to render fully-customized glyphs. The result of this step can be seen in the next figure where we can now see the `earth` normal vectors where `sun` rays intersect.
+
+![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Where rays hit the `earth` (yellow) we render the `earth` normal vectors (blue) which will define the direction of the reflected rays.](Scene06.png)
 
 ### Calculate and visualize reflected rays
+Here comes the final step. We now have all information we need to cast rays from the `sun`, detect which ones hit `earth`, and use vector math to cast subsequent rays that are reflected off the `earth` surface with the appropriate orientation.
+
+We first define a little auxiliary-function that calculates a reflected vector from the incident vector and the normal vector:
+
+```
+def calcVecR(vecInc, vecNor):
+    vecInc = l2n(vecInc)
+    vecNor = l2n(vecNor)
+    
+    vecRef = vecInc - 2*numpy.dot(vecInc, vecNor)*vecNor
+    
+    return n2l(vecRef)
+```
+
+As you can see we use the `l2n` and `n2l` helper-functions to quickly convert vectors from `list` or `tuple` objects to `numpy.ndarray` objects and vice-versa. A nice article detailing this type of vector math can be seen [here](http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf).
+
+Finally, we repeat the whole process we saw before but this time we only calculate and render the reflected rays:
+
+```
+# Extract the normal-vector data at the sun's cells
+normalsSun = normalsCalcSun.GetOutput().GetCellData().GetNormals()
+# Extract the normal-vector data at the earth's cells
+normalsEarth = normalsCalcEarth.GetOutput().GetCellData().GetNormals()
+
+# Loop through all of sun's cell-centers
+for idx in range(pointsCellCentersSun.GetNumberOfPoints()):
+    # Get coordinates of sun's cell center
+    pointSun = pointsCellCentersSun.GetPoint(idx)
+    # Get normal vector at that cell
+    normalSun = normalsSun.GetTuple(idx)
+    
+    # Calculate the 'target' of the ray based on 'RayCastLength'
+    pointRayTarget = n2l(l2n(pointSun) + RayCastLength*l2n(normalSun))
+    
+    # Check if there are any intersections for the given ray
+    if isHit(obbEarth, pointSun, pointRayTarget):
+        # Retrieve coordinates of intersection points and intersected cell ids
+        pointsInter, cellIdsInter = GetIntersect(obbEarth, pointSun, pointRayTarget)
+        # Get the normal vector at the earth cell that intersected with the ray
+        normalEarth = normalsEarth.GetTuple(cellIdsInter[0])
+        
+        # Calculate the incident ray vector
+        vecInc = n2l(l2n(pointRayTarget) - l2n(pointSun))
+        # Calculate the reflected ray vector
+        vecRef = calcVecR(vecInc, normalEarth)
+        
+        # Calculate the 'target' of the reflected ray based on 'RayCastLength'
+        pointRayReflectedTarget = n2l(l2n(pointsInter[0]) + RayCastLength*l2n(vecRef))
+
+        # Render lines/rays bouncing off earth with a 'ColorRayReflected' color
+        addLine(renderer, pointsInter[0], pointRayReflectedTarget, ColorRayReflected)
+        
+vtk_show(renderer, 600, 600)
+```
+
+The only 'new' lines here to which you should pay attention, reside within the loop and are the following:
+
+```
+# Calculate the incident ray vector
+vecInc = n2l(l2n(pointRayTarget) - l2n(pointSun))
+# Calculate the reflected ray vector
+vecRef = calcVecR(vecInc, normalEarth)
+        
+# Calculate the 'target' of the reflected ray based on 'RayCastLength'
+pointRayReflectedTarget = n2l(l2n(pointsInter[0]) + RayCastLength*l2n(vecRef))
+```
+
+As you can see, we just calculate the vector of the incident ray, a ray which we know hits the `earth`, by subtracting the coordinates of the ray's 'target' point on `earth` from the ray's 'source' point on the `sun`.
+
+The we use the simple auxiliary-function `calcVecR` to calculate the vector of the reflected ray through `vecRef = calcVecR(vecInc, normalEarth)`. Finally we calculate a 'target' point for this reflected ray, much as we did when we first cast the rays from the `sun`, as such:
+
+```
+pointRayReflectedTarget = n2l(l2n(pointsInter[0]) + RayCastLength*l2n(vecRef))
+```
+
+At long last, we just render these reflected rays through `addLine` and `vtk_show` and get the next figure.
+
+![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Where rays hit the `earth` (yellow) those are reflected and appropriate rays are re-cast from the `earth`.](Scene07.png)
+
+---
+
+# Outro
+As you can see, we just went through all the necessary components to perform ray-tracing with a given 'source' object being the `sun`, and a 'target' object being the `earth`. For a full ray-tracer, one would need to perform this sort of calculations and tests for each 'target' object and keep casting rays. In a more realistic ray-tracer two additional concepts would have to be accounted for:
+
+- Each ray would need to carry a certain amount of 'energy' which would gradually deplete, eventually running out, thus providing a means of terminating an otherwise endless loop.
+- The 'target' object would not merely reflect the impinging rays but part of the ray's energy would be reflected while the rest would refract through the 'target' object. However, that would require our different object to exhibit 'material' characteristics, thus defining the reflective and refractive indices as well as attenuation that would further deplete the ray's energy.
+
+However, the above would result in code that too much for a conceptual post and I'll leave it up to you to extend it for yourselves. I just hope I've provided you with all you needed to know to realize something of the sort.
+
+One last thing before I close. I mentioned in the beginning of this post, such a long time ago, that we needed to have a low 'resolution' for the `sun` mesh in order to get a small number of triangles, and therefore rays. If we had a very refined mesh on the `sun` not only would we significantly increase the number of rays, and therefore boggle the graphics, but we'd also be faced with quite a bit of computational weight. Regardless, here's the final render showing the entire scene if we were to set the `ResolutionSun` variable under *Options* from its default value of `6` to a value of `20`.
+
+![Final scene where the `ResolutionSun` variable was set to `20`.](Scene07resolution20.png)
+
+Pretty gorgeous albeit messy, wouldn't you say :) ?
+
+## Links & Resources
+
+### Material
+Here's the material used in this post:
+
+- [IPython Notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140917_RayTracing/Material/PythonRayTracingEarthSun.ipynb) showing the entire process.
+- [Earth Texture](https://bitbucket.org/somada141/pyscience/raw/master/20140917_RayTracing/Material/earthmap1k.jpg).
+- [Reflections and Refractions in Ray-Tracing by Bram de Greve](http://graphics.stanford.edu/courses/cs148-10-summer/docs/2006--degreve--reflection_refraction.pdf): Article explaining the math and physics behind reflection and refraction. 
+
+Check these past posts which were used and referenced today:
+
+- [Anaconda: The crème de la crème of Python distros](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/)
+- [IPython Notebook & VTK](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/)
+- [Surface Extraction: Creating a mesh from pixel-data using Python and VTK](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/)
+- [Ray Casting with Python and VTK: Intersecting lines/rays with surface meshes](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/)
+
+> Don't forget: all material I'm presenting in this blog can be found under the [PyScience BitBucket repository](https://bitbucket.org/somada141/pyscience).
+
+---
+
+I hope you enjoyed going through this post as much as I enjoyed putting it together. This was by far my longest post yet but I hope I managed to introduce you to a large variety of different VTK classes which you can utilize in a gazillion of different ways.
+
