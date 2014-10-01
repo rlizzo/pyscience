@@ -4,7 +4,7 @@ Date: Friday September 17th, 2014
 Tags: Python, IPython Notebook, VTK, STL, Ray Tracing, Ray Casting
 Categories: Image Processing, Visualization, VTK
 
-In this post I will show how to use VTK to trace rays emanating from the cell-centers of a source mesh, intersecting with another target mesh, and then show you how to cast subsequent rays bouncing off the target adhering to physical laws. This will include calculating the cell-centers in a mesh, calculating the normal vectors at those cells, vector visualization through glyphs, as well as other elements of visualization like textures and scene-lighting.
+In this post I will show how to use VTK to trace rays emanating from the cell-centers of a source mesh, intersecting with another target mesh, and then show you how to cast subsequent rays bouncing off the target adhering to physics laws. This will include calculating the cell-centers in a mesh, calculating the normal vectors at those cells, vector visualization through glyphs, as well as other elements of visualization like textures and scene-lighting.
 
 ---
 
@@ -35,7 +35,7 @@ import vtk
 import numpy
 ```
 
-I know I've been saying it in nearly every post but here goes again: [VTK](http://www.vtk.org/) is not that easy to install in a Python distro through `pip` or, even worse, by building from source. If for any reason you haven't managed to get yourself a nice Python installation with `ipython`, `numpy`, and `vtk`, which are needed for this post, do yourselves a favor and use Anaconda as instructed in [this previous post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). Alternatively, you can opt for the [Enthought Python Distribution (EPD)](https://www.enthought.com/products/epd/) or [Enthought Canopy](https://www.enthought.com/products/canopy/). Of course there's a truckload of [other distros](https://wiki.python.org/moin/PythonDistributions) but I can vouch for the above and they all come with pre-compiled builds of VTK.
+I know I've been saying it in nearly every post but here goes again: [VTK](http://www.vtk.org/) is not that easy to install in a Python distro through `pip` or, even worse, by building directly from source (VTK comes with a truckload of dependencies which you would most likely need to build from source as well). If for any reason you haven't managed to get yourself a nice Python installation with `ipython`, `numpy`, and `vtk`, which are needed for this post, do yourselves a favor and use Anaconda as instructed in [this previous post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). Alternatively, you can opt for the [Enthought Python Distribution (EPD)](https://www.enthought.com/products/epd/) or [Enthought Canopy](https://www.enthought.com/products/canopy/). Of course there's a truckload of [other distros](https://wiki.python.org/moin/PythonDistributions) but I can vouch for the above and they all come with pre-compiled builds of VTK.
 
 ## Helper-functions
 The following 'helper-functions' are defined at the beginning of [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140917_RayTracing/Material/PythonRayTracingEarthSun.ipynb) and used throughout:
@@ -105,7 +105,7 @@ ColorRayReflected = [1.0, 1.0, 0.0]
 ## 'Environment' Creation
 We will start by creating the 'environment' within which we'll perform our ray-tracing. This environment will comprise a half-sphere dubbed `sun` from which we will cast rays. Another sphere, which we will call `earth`, will receive and reflect those rays at appropriate angles.
 
-> Note that the `sun` and `earth` objects are by no means 'in-scale'. Far from it actually. I just named them as such to provide an apt analogy to what we're doing here.
+> Note that the `sun` and `earth` objects are by no means 'in-scale'. Far from it actually (whole thing kinda looks like an earth-ball with a ceiling light above). I just named them as such to provide an apt analogy to what we're doing here.
 
 ### Create the `sun`
 We start by creating the `sun` half-sphere through [`vtkSphereSource`](http://www.vtk.org/doc/nightly/html/classvtkSphereSource.html):
@@ -122,9 +122,9 @@ sun.SetStartTheta(180)  # create a half-sphere
 
 The `source->mapper->actor` process to create a sphere in VTK has been shown time after time and you can read about the mechanics in [this previous post](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/). However, I'll go over a few novelties here. As you can see, upon creating a new [`vtkSphereSource`](http://www.vtk.org/doc/nightly/html/classvtkSphereSource.html) under `sun` we set several parameters. The center coordinates and radius are defined through the `DistanceSun` and `RadiusSun` options discussed in the *Options* section.
 
-What's **really** important to note here is the `theta` and `phi` resolutions of the `sun` sphere set through the `SetThetaResolution` and `SetPhiResolution` methods respectively. VTK creates these spheres through the use of [spherical coordinates](http://en.wikipedia.org/wiki/Spherical_coordinate_system) and these resolution parameters define the number of points along the longitude and latitude directions respectively. A lower resolution will result in less points and therefore less triangles defining the sphere making it look like something of a rough polygon. 
+What's **really** important to note here is the `theta` and `phi` resolutions of the `sun` sphere set through the `SetThetaResolution` and `SetPhiResolution` methods respectively. VTK creates these spheres through the use of [spherical coordinates](http://en.wikipedia.org/wiki/Spherical_coordinate_system) and these resolution parameters define the number of points along the longitude and latitude directions respectively. A lower resolution will result in less points and therefore less triangles defining the sphere, making it look like something of a rough polygon. 
 
-However, as I mentioned in the *Summary* we will be casting a ray per triangle in the `sun` mesh so in order to keep the scene 'clean' and lower the computational cost, we set this resolutions to a mere `6` in the *Options*. Nonetheless, feel free to change this value in order to cast as many or as few rays as you wish. I'll be showing the result of a resolution of `20` at the end of this post.
+However, as I mentioned in the *Summary* we will be casting a ray per triangle of the `sun` mesh. Hence, in order to keep the scene 'clean' and lower the computational cost, we set this resolutions to a mere `6` in the *Options*. Nonetheless, feel free to change this value in order to cast as many or as few rays as you wish. I'll be showing the result of a resolution of `20` at the end of this post.
 
 A last point I'd like to make is the usage of the `SetStartTheta` method. As I just said, VTK uses spherical coordinates to 'design' these spherical objects. Through the `SetStartTheta`, `SetStopTheta`, `SetStartPhi`, and `SetStopPhi` methods we define the starting and stopping angles (in degrees) for this sphere, allowing us to create spherical segments instead of a full sphere. In this example, and in the interest of keeping the scene 'lean' we're only creating a 'half-sphere' through `SetStartTheta(180)`.
 
@@ -143,7 +143,7 @@ actorSun.GetProperty().EdgeVisibilityOn()  # show edges/wireframe
 actorSun.GetProperty().SetEdgeColor(ColorSunEdge)  #render edges as white
 ```
 
-Once more, check [this previous post](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/) to see what the deal with mappers and actors is in vtk. What I should mention here is that apart from using the `GetProperty()` method to access the properties of the `actorSun` object and set its color to `ColorSun` (set under *Options*), we also do so to enable the visibility of that mesh's edges and set them to a color of `ColorSunEdge` as well. This way we're visualizing the 'wireframe' of that object in order to see the individual mesh cells which come into play later.
+Once more, check [this previous post](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/) to see what the deal with mappers and actors is in VTK. What I should mention here is that apart from using the `GetProperty()` method to access the properties of the `actorSun` object and set its color to `ColorSun` (set under *Options*), we also do so to enable the visibility of that mesh's edges and set them to a color of `ColorSunEdge`. This way we're visualizing the 'wireframe' of that object in order to see the individual mesh cells which come into play later.
 
 Finally as we've done in all posts dealing with VTK we create a new [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html), add the `actorSun` object, set some camera properties, and use the `vtk_show` 'helper-function' to render the scene:
 
@@ -162,11 +162,13 @@ renderer.SetActiveCamera(camera)
 vtk_show(renderer, 600, 600)
 ```
 
-Take a look at this [past post about VTK integration with an IPython Notebook](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/) for an explanation of the [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) class, and the [post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/) to see what gives with the camera. What's important to note is that we've created a [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) object under `renderer` to which we will continue adding new [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) object as we go, thus adding elements to the scene.
+Take a look at this [past post about VTK integration with an IPython Notebook](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/) for an explanation of the [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) class, and the [post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/) to see what gives with the camera. What's important to note is that we've created a [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) object under `renderer` to which we will continue adding new [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) objects as we go, thus enriching the scene.
 
 The result of `vtk_show` can be seen in the following figure:
 
 ![Scene render showing only the `sun` half-sphere.](Scene00.png)
+
+> Here you can see the effect of that 'resolution' stuff I was talking about before. The `sun` half-sphere is jagged and rough. Nonetheless, it still comprises plenty of cells and therefore ray-sources for our example.
 
 ### Create the `earth`
 Let's go onto creating `earth`. As during my posts I've showed you how to create spheres a trillion times I thought I'd kick it up a notch and show you how to texture one, giving it a bit of razzle-dazzle :). We start by creating a new sphere under `earth` as such:
@@ -236,7 +238,7 @@ renderer.AddActor(actorEarth)
 vtk_show(renderer, 600, 600)
 ```
 
-You should be familiar with the [`vtkPolyDataMapper`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataMapper.html) and [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) classes so I won't repeat myself. What you **should** pay attention to is that instead of using `earth` as a source for `mapperEarth` we instead use `map_to_sphere` which contains the [`vtkTextureMapToSphere`](http://www.vtk.org/doc/nightly/html/classvtkTextureMapToSphere.html) object we just saw! In addition, upon creating `actorEarth` we finally set the `texture` through `actorEarth.SetTexture(texture)`. As you can see the `texture` goes straight into the appropriate [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) object which along with the texture-mapping provides us with a nicely textured sphere.
+You should be familiar with the [`vtkPolyDataMapper`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataMapper.html) and [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) classes so I won't repeat myself. What you **should** pay attention to is that instead of using `earth` as a source for `mapperEarth` we instead use `map_to_sphere` which contains the [`vtkTextureMapToSphere`](http://www.vtk.org/doc/nightly/html/classvtkTextureMapToSphere.html) object we just saw! In addition, upon creating `actorEarth` we finally set the `texture` through `actorEarth.SetTexture(texture)`. As you can see the `texture` goes straight into the appropriate [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) object, which along with the texture-mapping provides us with a nicely textured sphere.
 
 Finally, we make the `earth` wireframe visible with a `ColorEarthEdge` color, add `actorEarth` to `renderer`, and use `vtk_show` to render the scene resulting in the following figure:
 
@@ -245,7 +247,7 @@ Finally, we make the `earth` wireframe visible with a `ColorEarthEdge` color, ad
 ### Adding lighting to the scene
 Now you might say "what gives? we went to so much trouble to texture that stupid ball and it looks all dark and crummy!". Well at least I obviously thought so, thus I decided to shed a little light on the situation (I know, stupidest pun ever). 
 
-Before I continue I want to mention, that all VTK scenes comes with a default 'headlight' which follows the camera and illuminates the scene. In most cases that's enough to see our rendering but often we need a lil' extra.
+Before I continue, I want to mention that all VTK scenes comes with a default 'headlight' which follows the camera and illuminates the scene. In most cases that's enough to see our rendering but often we need a lil' extra.
 
 In this case I added a light point-source through the [`vtkLight`](http://www.vtk.org/doc/nightly/html/classvtkLight.html) class. Let's see how that was done:
 
@@ -267,7 +269,7 @@ renderer.AddLight(light)
 vtk_show(renderer, 600, 600)
 ```
 
-Initially, we create a [`vtkLight`](http://www.vtk.org/doc/nightly/html/classvtkLight.html) object under `light`, and set an appropriate `ColorLight` which was defined at the *Options* section. As you can see I set the position of the light-source to the center of the `sun` half-sphere, which just makes sense, through `light.SetPosition(sun.GetCenter())`, while its focal point is the center of the `earth` sphere.
+Initially, we create a [`vtkLight`](http://www.vtk.org/doc/nightly/html/classvtkLight.html) object under `light`, and set an appropriate `ColorLight` which was defined at the *Options* section. As you can see I set the position of the light-source to the center of the `sun` half-sphere, which just makes sense (you know, `sun` and all that), through `light.SetPosition(sun.GetCenter())`, while its focal point is the center of the `earth` sphere.
 
 What's important to note here is that these lights are typically 'spotlights' adding a 'narrow' beam of light to the scene. By using `SetConeAngle(180)` we create a uniform semi-spherical light that evenly illuminates the entire scene residing beneath the center of the `sun` half-sphere. Lastly, please pay attention to the `SetPositional(True)` method which makes this light a constant part of the scene, forcing it in place, and not allowing it to move with respect to the scene's camera.
 
@@ -307,7 +309,7 @@ We first 'extract' the cell-centers through `cellCenterCalcSun.GetOutput(0)`, st
 ![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](Scene03.png)
 
 ### Calculate normal vectors at the center of each cell
-Now that we have the cell-centers, which will act as the 'source points' of the `sun` rays, we need to calculate the normal vectors at those points which will define the directions of the rays. Once more, VTK provides the tools but doesn't make it easy or clear for us (you wouldn't appreciate it working if it was easy would you now :) ?). Let's see how it's done:
+Now that we have the cell-centers, which will act as the 'source points' of the `sun` rays, we need to calculate the normal vectors at those points which will define the directions of the rays. Once more, VTK provides the tools but doesn't make it easy or clear for us (you wouldn't appreciate it working if it was easy, would you now :) ?). Let's see how it's done:
 
 ```
 # Create a new 'vtkPolyDataNormals' and connect to the 'sun' half-sphere
@@ -387,14 +389,14 @@ Subsequently, we create the glyphs. Note that we first create `arrow`, a [`vtkAr
 
 We then create a new [`vtkGlyph3D`](http://www.vtk.org/doc/nightly/html/classvtkGlyph3D.html) object under `glyphSun`. The important thing to note here is the difference between the `SetInputConnection` and `SetSourceConnection` methods. The latter just connects to the 'source' glyph, i.e., the `arrow` in our case. The `SetInputConnection` call is given `dummy_cellCenterCalcSun.GetOutputPort()`, i.e., the normal vectors calculated and then positioned at the cell-centers of the `sun` mesh. 
 
-From there on things are simple, we enforce orientation of the created glyphs to the supplied normal vectors through `SetVectorModeToUseNormal()`, and we provide a 'scale factor' for the base glyphs, which will just uniformly scale the `arrow` and its default size. The rest has been shown a thousand times: we create a [`vtkPolyDataMapper`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataMapper.html) to map the create object to graphics primitives and connect to the `glyphSun` output. We then create a standard [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html), connect to the aforementioned mapper, and use its `GetProperty()` method to `SetColor(ColorSunGlyphs)`. 
+Henceforth things are simple: we enforce orientation of the created glyphs to the supplied normal vectors through `SetVectorModeToUseNormal()`, and we provide a 'scale factor' for the base glyphs, which will just uniformly scale the `arrow` and its default size. The rest has been shown a thousand times: we create a [`vtkPolyDataMapper`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataMapper.html) to map the create object to graphics primitives and connect to the `glyphSun` output. We then create a standard [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html), connect to the aforementioned mapper, and use its `GetProperty()` method to `SetColor(ColorSunGlyphs)`. 
 
 Finally, using the `vtk_show` helper-function yields the following figure. As you can see we have visualized all normal vectors with arrows, showing the direction our `sun` rays will follow.
 
 ![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](Scene04.png)
 
 ## Prepare for ray-tracing
-At this point we finally get to the ray-tracing part of the post. All we now need to do is prepare the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) object for `earth` as I showed in the [last post  on ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). If you haven't read it then I strongly recommend that you do now cause I won't explain the details again.
+We're finally getting to the ray-tracing part of the post. All we now need to do is prepare the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) object for `earth` as I showed in the [last post  on ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). If you haven't read it then I strongly recommend that you do now cause I won't explain the details again.
 
 Firstly, we create a new [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) object with the `earth` mesh where we're going to test for intersection with rays coming from the `sun`. This is done as simply as this:
 
@@ -474,7 +476,7 @@ Again, if you haven't read the [last post  on ray-casting](http://pyscience.word
 
 The `isHit` function will simply return `True` or `False` depending on whether a given ray intersects with `obbTree`, which in our case will only be `obbEarth`. 
 
-The second function is a little more complex but the mechanics were detailed in the [previous post](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). I've included comments in the code so you can get what it does but I'm not going to spoon-feed this to you again so read up :).
+The second function is a little more complex but the mechanics were detailed in the [previous post](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). I've included comments in the code so you can get what it does but I'm not going to spoon-feed this to you again. Read up :).
 
 In a nutshell it will return two `list` objects `pointsInter` and `cellIdsInter`. The former will contain a series of `tuple` objects with the coordinates of the intersection points. The latter will contain the 'id' of the mesh cells that were 'hit' by that ray. This information is vital as through these ids we'll be able to get the correct normal vector for that `earth` cell and calculate the appropriate reflected vector as we'll see below.
 
@@ -523,7 +525,7 @@ Afterwards, as we want to cast a ray from every cell-center on the `sun` mesh, w
 
 We store the coordinates of each such point under `pointSun` through `pointsCellCentersSun.GetPoint(idx)`, while we store the corresponding normal vector under `normalSun` through `normalsSun.GetTuple(idx)`. Now we have the 'source' point and direction our ray should follow.
 
-In our example, however, rays are merely lines of finite length. Due to that we have to define a 'target' point which we want to make sure it won't miss the `earth` due to a small length. To that end I've defined a variable `RayCastLength` under the *Options*, which naturally will define the length of the 'ray'. As such we use the following line (repeating it here) to calculate the coordinates of the 'target' point:
+In our example, however, rays are merely lines of finite length. Due to that we have to define a 'target' point which we want to make sure it won't miss the `earth` due to an insufficient length. To that end I've defined a variable `RayCastLength` under the *Options*, which naturally will define the length of the 'ray'. As such we use the following line (repeating it here) to calculate the coordinates of the 'target' point:
 
 ```
 pointRayTarget = n2l(l2n(pointSun) + RayCastLength*l2n(normalSun))
@@ -535,7 +537,7 @@ Now we finally have all we need to cast that pesky ray, i.e. the 'source' and 't
 
 `isHit(obbEarth, pointSun, pointRayTarget)`
 
-If we get a `True` back then the ray does indeed intersect and its worth processing further. If not we just render that ray anyway through `addLine` with a `ColorRayMiss` color, and a 25% opacity (in our case resulting in a faded whitish ray).
+If we get a `False` back then the ray does not intersect and its not worth processing further but we render it anyway through `addLine` with a `ColorRayMiss` color, and a 25% opacity (in our case resulting in a faded whitish ray).
 
 However, should the ray intersect with `earth` then its worth processing. We then re-cast that ray and retrieve the intersection point coordinates and ids of the `earth` cells the ray hit through the `GetIntersect` auxiliary-function we defined before (repeating the line here):
 
@@ -543,7 +545,9 @@ However, should the ray intersect with `earth` then its worth processing. We the
 pointsInter, cellIdsInter = GetIntersect(obbEarth, pointSun, pointRayTarget)
 ```
 
-As I explained before, the `pointsInter` variable now holds a `list` of `tuple` objects with the coordinates of each intersection point in order. The `cellIdsInter` contains simple `int` entries with the id of the mesh cells that were this but we won't use that information in this step. What we will however use is `pointsInter[0]`, i.e., the 1st point that was hit by the ray. Note that we consider the `earth` to be a reflective body so we don't care about the following intersection points as the rays that impinge on `earth` are supposed to be reflected entirely.
+As I explained before, the `pointsInter` variable now holds a `list` of `tuple` objects with the coordinates of each intersection point in order. The `cellIdsInter` contains simple `int` entries with the id of the mesh cells that were this but we won't use that information in this step. What we will however use is `pointsInter[0]`, i.e., the 1st point that was hit by the ray. 
+
+> We consider the `earth` to be a reflective body so we don't care about the following intersection points as the rays that impinge on `earth` are supposed to be reflected entirely.
 
 The rest is super-simple. We just use `addLine` and `addPoint` to render the ray that hits the earth and the 1st intersection point, which under default *Options* should appear as yellow. 
 
@@ -621,7 +625,7 @@ vtk_show(renderer, 600, 600)
 
 Firstly, we extract the normal vectors for the `sun` and `earth`, much as we did before, and store them under `normalsSun` and `normalsEarth` respectively.
 
-Then, we create two 'dummy' containers that will store the intersection point coordinates (`dummy_points`)  and the `earth` normals (`dummy_vectors`) where `sun` rays intersected. We will use this information to render those, and only those, normals on `earth`. Note that `dummy_points` is of type [`vtkPoints`](http://www.vtk.org/doc/nightly/html/classvtkPoints.html), while `dummy_vectors` is of [`vtkDoubleArray`](http://www.vtk.org/doc/nightly/html/classvtkDoubleArray.html) type. We 'configure' `dummy_vectors` to have `3` components through `SetNumberOfComponents` which are going to be the `3` vector components. Finally, we define `dummy_polydata` of type [`vtkPolyData`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html), which will 'house' the 'dummy' points and vectors and which we will pass to the [`vtkGlyph3D`](http://www.vtk.org/doc/nightly/html/classvtkGlyph3D.html) class later on.
+Then, we create two 'dummy' containers that will store the intersection point coordinates (`dummy_points`)  and the `earth` normals (`dummy_vectors`) where `sun` rays intersected. We will use this information to render those, and only those, normals on `earth`. Note that `dummy_points` is of type [`vtkPoints`](http://www.vtk.org/doc/nightly/html/classvtkPoints.html), while `dummy_vectors` is of [`vtkDoubleArray`](http://www.vtk.org/doc/nightly/html/classvtkDoubleArray.html) type. We 'configure' `dummy_vectors` to have `3` components through `SetNumberOfComponents` which are going to be the vector's `x`, `y`, and `z`, components. Finally, we define `dummy_polydata` of type [`vtkPolyData`](http://www.vtk.org/doc/nightly/html/classvtkPolyDataNormals.html), which will 'house' the 'dummy' points and vectors and which we will pass to the [`vtkGlyph3D`](http://www.vtk.org/doc/nightly/html/classvtkGlyph3D.html) class later on.
 
 The loop in this step is very similar to the one we presented in the previous step. We simply go through all cell-centers on the `sun` mesh, cast-rays, and test for their intersection. The key difference is that instead of rendering rays, we now use the `cellIdsInter` to get the cell id of the 1st cell, i.e., the cell the `sun` ray first intersects with. We then use that id to retrieve the normal vector on the `earth` where the ray hit as such:
 
@@ -629,7 +633,7 @@ The loop in this step is very similar to the one we presented in the previous st
 normalEarth = normalsEarth.GetTuple(cellIdsInter[0])
 ```
 
-We then use the `InsertNextPoint` and `InsertNextTuple` methods to 'push' the retrieved point coordinates and normal vectors into the dummy containers. Once the loop is complete, we set those points and vectors to the `dummy_polydata` container as points and normals. We do this through the `SetPoints` and `GetPointData().SetNormals()` methods respectively.
+Subsequently, we use the `InsertNextPoint` and `InsertNextTuple` methods to 'push' the retrieved point coordinates and normal vectors into the dummy containers. Once the loop is complete, we set those points and vectors to the `dummy_polydata` container as points and normals. We do this through the `SetPoints` and `GetPointData().SetNormals()` methods respectively.
 
 The rest is mostly the same as the previous glyph rendering we did for the `sun` normals. The only difference is that the source of the `glyphEarth` object is now the  `dummy_polydata` object we just composed. As you can understand, this approach allowed us to render fully-customized glyphs. The result of this step can be seen in the next figure where we can now see the `earth` normal vectors where `sun` rays intersect.
 
@@ -638,7 +642,7 @@ The rest is mostly the same as the previous glyph rendering we did for the `sun`
 ### Calculate and visualize reflected rays
 Here comes the final step. We now have all information we need to cast rays from the `sun`, detect which ones hit `earth`, and use vector math to cast subsequent rays that are reflected off the `earth` surface with the appropriate orientation.
 
-We first define a little 'auxiliary-function' called `calcVecR` that calculates a reflected vector from the incident vector and the normal vector:
+We first define a little 'auxiliary-function' called `calcVecR` that calculates a reflected vector from the incident and normal vectors:
 
 ```
 def calcVecR(vecInc, vecNor):
@@ -705,7 +709,7 @@ pointRayReflectedTarget = n2l(l2n(pointsInter[0]) + RayCastLength*l2n(vecRef))
 
 As you can see, we just calculate the vector of the incident ray, a ray which we know hits the `earth`, by subtracting the coordinates of the ray's 'target' point on `earth` from the ray's 'source' point on the `sun`.
 
-The we use the simple auxiliary-function `calcVecR` to calculate the vector of the reflected ray through `vecRef = calcVecR(vecInc, normalEarth)`. Finally we calculate a 'target' point for this reflected ray, much as we did when we first cast the rays from the `sun`, as such:
+Then we use the simple auxiliary-function `calcVecR` to calculate the vector of the reflected ray through `vecRef = calcVecR(vecInc, normalEarth)`. Finally we calculate a 'target' point for this reflected ray, much as we did when we first cast the rays from the `sun`, as such:
 
 ```
 pointRayReflectedTarget = n2l(l2n(pointsInter[0]) + RayCastLength*l2n(vecRef))
@@ -721,7 +725,7 @@ At long last, we just render these reflected rays through `addLine` and `vtk_sho
 As you can see, we just went through all the necessary components to perform ray-tracing with a given 'source' object being the `sun`, and a 'target' object being the `earth`. For a full ray-tracer, one would need to perform this sort of calculations and tests for each 'target' object and keep casting rays. In a more realistic ray-tracer two additional concepts would have to be accounted for:
 
 - Each ray would need to carry a certain amount of 'energy' which would gradually deplete, eventually running out, thus providing a means of terminating an otherwise endless loop.
-- The 'target' object would not merely reflect the impinging rays but part of the ray's energy would be reflected while the rest would refract through the 'target' object. However, that would require our different objects to exhibit 'material' characteristics, thus defining the reflective and refractive indices as well as attenuation that would further deplete the ray's energy as it passes through such an object.
+- The 'target' object would not merely reflect the impinging rays but part of the ray's energy would be reflected while the rest would refract through the 'target' object. Therefore, every ray-hit would actually result in two subsequent rays that would need to be cast and traced. However, that would require our different objects to exhibit 'material' characteristics, thus defining the reflective and refractive indices as well as attenuation that would further deplete the ray's energy as it passes through such an object.
 
 However, the above would result in code that too much for a conceptual post and I'll leave it up to you to extend it for yourselves. I just hope I've provided you with all you needed to know to realize something of the sort.
 
@@ -753,7 +757,7 @@ Check these past posts which were used and referenced today:
 
 I hope you enjoyed going through this post as much as I enjoyed putting it together. This was by far my longest post yet, and it took a preposterous amount of my free time to prepare, but I hope I managed to introduce you to a large variety of different VTK classes which you can utilize in a gazillion of different ways.
 
-I've tested the [accompanying notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140917_RayTracing/Material/PythonRayTracingEarthSun.ipynb) on Mac OS X 10.9.5, Windows 8.1, and Linux Mint 17, all running the latest Anaconda Python with a `py27` environment as instructed in my [first post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). Thus, I have no reason to believe that you'll run into trouble but if you do then you know the drill :).
+I've tested the [accompanying notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20140917_RayTracing/Material/PythonRayTracingEarthSun.ipynb) on Mac OS X 10.9.5, Windows 8.1, and Linux Mint 17, all running the latest Anaconda Python with a `py27` environment as discussed in my [first post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/). Thus, I have no reason to believe that you'll run into trouble but if you do then you know the drill (comment here and I'll get back to you) :).
 
 One last quick note: I know I never mentioned it before, cause - to my dismay - I tend to consider a few things as common knowledge, but VTK has not yet been wrapped for Python 3 even though the [porting has been in the works for some time](http://www.vtk.org/Wiki/VTK/Python_Wrapping_FAQ). For better or for worse, Python+VTK code will need to be executed on Python 2 for the time being :).
 
