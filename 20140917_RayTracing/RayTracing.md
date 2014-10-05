@@ -166,7 +166,7 @@ Take a look at this [past post about VTK integration with an IPython Notebook](h
 
 The result of `vtk_show` can be seen in the following figure:
 
-![Scene render showing only the `sun` half-sphere.](Scene00.png)
+![Scene render showing only the `sun` half-sphere.](http://pyscience.files.wordpress.com/2014/10/wpid-scene00.png)
 
 > Here you can see the effect of that 'resolution' stuff I was talking about before. The `sun` half-sphere is jagged and rough. Nonetheless, it still comprises plenty of cells and therefore ray-sources for our example.
 
@@ -242,7 +242,7 @@ You should be familiar with the [`vtkPolyDataMapper`](http://www.vtk.org/doc/nig
 
 Finally, we make the `earth` wireframe visible with a `ColorEarthEdge` color, add `actorEarth` to `renderer`, and use `vtk_show` to render the scene resulting in the following figure:
 
-![Scene render showing the `sun` half-sphere and the textured `earth` sphere.](Scene01.png)
+![Scene render showing the `sun` half-sphere and the textured `earth` sphere.](http://pyscience.files.wordpress.com/2014/10/wpid-scene01.png)
 
 ### Adding lighting to the scene
 Now you might say "what gives? we went to so much trouble to texture that stupid ball and it looks all dark and crummy!". Well at least I obviously thought so, thus I decided to shed a little light on the situation (I know, stupidest pun ever). 
@@ -275,7 +275,7 @@ What's important to note here is that these lights are typically 'spotlights' ad
 
 After adding `light` to the `renderer`, we once more use `vtk_show` to render the scene and get this figure (makes quite the difference right?):
 
-![Scene render showing the `sun` half-sphere and the textured `earth` sphere with added lighting.](Scene02.png)
+![Scene render showing the `sun` half-sphere and the textured `earth` sphere with added lighting.](http://pyscience.files.wordpress.com/2014/10/wpid-scene02.png)
 
 ## 'Prepare' the Sun Rays
 As I said in the *Summary*, we will be casting rays from each cell-center of the `sun` mesh following the direction of the normal vectors of those cells. Naturally, we first need to calculate these quantities, thus 'defining' the rays.
@@ -306,7 +306,7 @@ vtk_show(renderer, 600, 600)
 
 We first 'extract' the cell-centers through `cellCenterCalcSun.GetOutput(0)`, storing the result of [`vtkPoints`](http://www.vtk.org/doc/nightly/html/classvtkPoints.html) type under `pointsCellCentersSun`. Subsequently, we loop through these points and use `addPoint` to add them to the [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) object we created before and which now resides under `renderer`. Note that we're looping using the `range` built-in and the `GetNumberOfPoints()` method to get the total number of points found. The resulting figure can then be seen below.
 
-![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](Scene03.png)
+![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](http://pyscience.files.wordpress.com/2014/10/wpid-scene03.png)
 
 ### Calculate normal vectors at the center of each cell
 Now that we have the cell-centers, which will act as the 'source points' of the `sun` rays, we need to calculate the normal vectors at those points which will define the directions of the rays. Once more, VTK provides the tools but doesn't make it easy or clear for us (you wouldn't appreciate it working if it was easy, would you now :) ?). Let's see how it's done:
@@ -393,7 +393,7 @@ Henceforth things are simple: we enforce orientation of the created glyphs to th
 
 Finally, using the `vtk_show` helper-function yields the following figure. As you can see we have visualized all normal vectors with arrows, showing the direction our `sun` rays will follow.
 
-![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](Scene04.png)
+![Scene render showing the `sun` half-sphere with points at each cell-center of its mesh](http://pyscience.files.wordpress.com/2014/10/wpid-scene04.png)
 
 ## Prepare for ray-tracing
 We're finally getting to the ray-tracing part of the post. All we now need to do is prepare the [`vtkOBBTree`](http://www.vtk.org/doc/release/5.2/html/a00908.html) object for `earth` as I showed in the [last post  on ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/). If you haven't read it then I strongly recommend that you do now cause I won't explain the details again.
@@ -553,7 +553,7 @@ The rest is super-simple. We just use `addLine` and `addPoint` to render the ray
 
 After looping through all cell-centers in the `sun`, cast those rays, and define whether they hit or miss, we finally call `vtk_show` and end up with the next figure.
 
-![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Rays that miss the `earth` are rendered as a transparent white while rays that hit are rendered as yellow](Scene05.png)
+![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Rays that miss the `earth` are rendered as a transparent white while rays that hit are rendered as yellow](http://pyscience.files.wordpress.com/2014/10/wpid-scene05.png)
 
 ### Visualize the normal vectors at the cells where sun's rays intersect with earth
 During this next step we'll add a lil' more complexity, and visualize the `earth` normal vectors at the points where rays from the `sun` intersect and we'll do so again through glyphs. However, unlike the case where we rendered all normals on the `sun` surface, here we only want to render the normals at points were intersections were detected. Thus, the glyph process is slightly different and allows for more flexibility.
@@ -637,7 +637,7 @@ Subsequently, we use the `InsertNextPoint` and `InsertNextTuple` methods to 'pus
 
 The rest is mostly the same as the previous glyph rendering we did for the `sun` normals. The only difference is that the source of the `glyphEarth` object is now the  `dummy_polydata` object we just composed. As you can understand, this approach allowed us to render fully-customized glyphs. The result of this step can be seen in the next figure where we can now see the `earth` normal vectors where `sun` rays intersect.
 
-![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Where rays hit the `earth` (yellow) we render the `earth` normal vectors (blue) which will define the direction of the reflected rays.](Scene06.png)
+![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Where rays hit the `earth` (yellow) we render the `earth` normal vectors (blue) which will define the direction of the reflected rays.](http://pyscience.files.wordpress.com/2014/10/wpid-scene06.png)
 
 ### Calculate and visualize reflected rays
 Here comes the final step. We now have all information we need to cast rays from the `sun`, detect which ones hit `earth`, and use vector math to cast subsequent rays that are reflected off the `earth` surface with the appropriate orientation.
@@ -717,7 +717,7 @@ pointRayReflectedTarget = n2l(l2n(pointsInter[0]) + RayCastLength*l2n(vecRef))
 
 At long last, we just render these reflected rays through `addLine` and `vtk_show` and get the next figure.
 
-![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Where rays hit the `earth` (yellow) those are reflected and appropriate rays are re-cast from the `earth`.](Scene07.png)
+![Scene render showing the `sun` half-sphere casting rays towards the `earth`. Where rays hit the `earth` (yellow) those are reflected and appropriate rays are re-cast from the `earth`.](http://pyscience.files.wordpress.com/2014/10/wpid-scene07.png)
 
 ---
 
@@ -731,7 +731,7 @@ However, the above would result in code that too much for a conceptual post and 
 
 One last thing before I close. I mentioned in the beginning of this post, such a long time ago, that we needed to have a low 'resolution' for the `sun` mesh in order to get a small number of triangles, and therefore rays. If we had a very refined mesh on the `sun` not only would we significantly increase the number of rays, and therefore boggle the graphics, but we'd also be faced with quite a bit of computational weight. Regardless, here's the final render showing the entire scene if we were to set the `ResolutionSun` variable under *Options* from its default value of `6` to a value of `20`.
 
-![Final scene where the `ResolutionSun` variable was set to `20`.](Scene07resolution20.png)
+![Final scene where the `ResolutionSun` variable was set to `20`.](http://pyscience.files.wordpress.com/2014/10/wpid-scene07resolution20.png)
 
 Pretty gorgeous albeit messy, wouldn't you say :) ?
 
