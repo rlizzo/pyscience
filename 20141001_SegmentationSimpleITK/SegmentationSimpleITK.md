@@ -2,7 +2,7 @@ Title: Image Segmentation with Python and SimpleITK
 Author: Adamos Kyriakou
 Date: Friday October 4th, 2014
 Tags: Python, IPython Notebook, DICOM, VTK, ITK, SimpleITK, Medical Image Processing, Image Segmentation
-Categories: Image Processing, Visualization, VTK
+Categories: Image Processing, Visualization, ITK/SimpleITK, Image Segmentation, IO
 
 In this post I will demonstrate SimpleITK, an abstraction layer over the ITK library, to segment/label the white and gray matter from an MRI dataset. I will start with an intro on what SimpleITK is, what it can do, and how to install it. The tutorial will include loading a DICOM file-series, image smoothing/denoising, region-growing image filters, binary hole filling, as well as visualization tricks.
 
@@ -112,7 +112,7 @@ This last one is exactly the case today. I compiled the latest [SimpleITK](http:
 
 If you're using Anaconda Python the you simply need to download the appropriate `.egg` and install it through `easy_install <egg filename>`. Uninstalling it is as easy as `pip uninstall simpleitk`.
 
-> If you're using an Anaconda environment, e.g. named `py27` environment as instructed in [this past post](pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), then you need to activate that environment prior to installing the package through `activate py27` (Windows) or `source activate py27` (Linux/OSX). Also, make sure that environment contains `pip` and `setuptools` before installing the `.egg`. Otherwise, `pip` will be called through the `root` Anaconda environment and be installed in that environment instead.
+> If you're using an Anaconda environment, e.g. named `py27` environment as instructed in [this past post](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), then you need to activate that environment prior to installing the package through `activate py27` (Windows) or `source activate py27` (Linux/OSX). Also, make sure that environment contains `pip` and `setuptools` before installing the `.egg`. Otherwise, `pip` will be called through the `root` Anaconda environment and be installed in that environment instead.
 
 ## Summary 
 The purpose of today's post was to introduce you to [SimpleITK](http://www.simpleitk.org/), show you how to install it, and give you a taste of its image-processing prowess. 
@@ -219,7 +219,7 @@ Reading the entirety of the DICOM file series goes as follows: We start by creat
 
 > If you get a dead kernel here then please do check the console output. It might well be that you forgot to extract the DICOM files out of their .zip or that you've placed them under a different directory to the one under `pathDicom`.
 
-A **very** important point I want to stress here is that [SimpleITK](http://www.simpleitk.org/) uses the [Grassroots DICOM library (GDCM)](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) to load DICOM files. As a result, those pesky JPEG compressed DICOM files, e.g., the ones found in the [Osirix Datasets page](http://www.osirix-viewer.com/datasets/), which we couldn't load with either PyDICOM or VTK in the [past post about Python and DICOM](pyscience.wordpress.com/2014/09/08/dicom-in-python-importing-medical-image-data-into-numpy-with-pydicom-and-vtk/), are no longer a deterrence. [GDCM](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) is actually the most comprehensive DICOM library I know of so you should be able to handle pretty much any DICOM file :).
+A **very** important point I want to stress here is that [SimpleITK](http://www.simpleitk.org/) uses the [Grassroots DICOM library (GDCM)](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) to load DICOM files. As a result, those pesky JPEG compressed DICOM files, e.g., the ones found in the [Osirix Datasets page](http://www.osirix-viewer.com/datasets/), which we couldn't load with either PyDICOM or VTK in the [past post about Python and DICOM](http://pyscience.wordpress.com/2014/09/08/dicom-in-python-importing-medical-image-data-into-numpy-with-pydicom-and-vtk/), are no longer a deterrence. [GDCM](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) is actually the most comprehensive DICOM library I know of so you should be able to handle pretty much any DICOM file :).
 
 Then, as I mentioned in the *Options* section, we limit ourselves to a single 2D slice of the 3D volume. We do so by using the basic slicing offered by the `SimpleITK.Image` class:
 
@@ -237,7 +237,7 @@ which yields the next figure.
 
 > Note that, ironically, the white-matter (inner structure) appears as gray in the MR image while the gray-matter (outer structure) appears as white. Don't let that throw you off :).
 
-![Sagittal cross-section of the original MRI dataset clearly showing the white and gray matter of the brain among other tissues.](MyHead_01.png)
+![Sagittal cross-section of the original MRI dataset clearly showing the white and gray matter of the brain among other tissues.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_01.png)
 
 ## Smoothing/Denoising
 As you can see from the above figure, the original image data exhibits quite a bit of 'noise' which is very typical of MRI datasets. However, since we'll be applying region-growing and thresholding segmentation algorithms we need a smoother, more homogeneous pixel distribution. To that end, before we start the segmentation, we  smoothen the image with the [`CurvatureFlowImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1CurvatureFlowImageFilter.html#details). Here's how we do that:
@@ -267,7 +267,7 @@ The above holds for all image filters included in [SimpleITK](http://www.simplei
 
 Regardless of the calling-paradigm, we end up with a `imgSmooth` image which contains the results of the smoothing. Using `sitk_show` we get the following figure:
 
-![Image after smoothing/denoising with a `CurvatureFlow` filter.](MyHead_02.png)
+![Image after smoothing/denoising with a `CurvatureFlow` filter.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_02.png)
 
 > I should mention that image-smoothing is a very typical first step in the medical image data segmentation process, 'required' by the majority of segmentation algorithms.
 
@@ -310,7 +310,7 @@ We do that by first using the [`RescaleIntensityImageFilter`](http://www.itk.org
 
 Finally, we overlay `imgSmoothInt` and `imgWhiteMatter` through the [`SimpleITK.LabelOverlayImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1LabelOverlayImageFilter.html) class which creates a nice basic-color RGB depiction of the otherwise monochrome 2nd image. Using the `sitk_show` helper function we get the next figure.
 
-![Label overlay showing the results of the white-matter's initial segmentation over the denoised MR image.](MyHead_03.png)
+![Label overlay showing the results of the white-matter's initial segmentation over the denoised MR image.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_03.png)
 
 ### Hole-filling
 As you can see from the above figure, our initial segmentation is subpar at best. Not only did we 'eat into' the gray matter, with which we'll deal later, but in addition there are numerous 'holes' in the white-matter label. Let's start by rectifying this.
@@ -333,7 +333,7 @@ As you can see we once more skip the whole 'initialize filter-configure filter-e
 
 The result of the hole-filling operation is stored under `imgWhiteMatterNoHoles` and we once more overlay this new label with `imgSmoothInt` getting the next figure. As you can see the operation wasn't wildly successful but many of the smaller holes were indeed filled. All this means is that we should've imposed looser criteria, e.g., a larger `radius`. 
 
-![Label overlay showing the results of the hole-filling operation on the white-matter.](MyHead_04.png)
+![Label overlay showing the results of the hole-filling operation on the white-matter.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_04.png)
 
 ### Segmentation of the gray-matter
 Next we'll repeat the process we just saw but this time for the gray matter. Here's the code:
@@ -358,7 +358,7 @@ sitk_show(SimpleITK.LabelOverlay(imgSmoothInt, imgGrayMatterNoHoles))
 
 As you can see, apart from defining four different seeds and changing the thresholds and label index, the process is entirely the same, i.e., segmentation and hole-filling. The result of the label overlay with `sitk_show` can be seen below. 
 
-![Label overlay showing the results of the gray-matter's segmentation and hole-filling.](MyHead_05.png)
+![Label overlay showing the results of the gray-matter's segmentation and hole-filling.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_05.png)
 
 ### Label-field mathematics
 Lastly, we want to combine the two label-fields, i.e., the white and gray matter. As I mentioned in the *Introduction*, the `SimpleITK.Image` class overloads and supports all binary and arithmetic operators. Hence, combining the two label-fields is as easy as a simple OR operator (`|`):
@@ -371,7 +371,7 @@ sitk_show(SimpleITK.LabelOverlay(imgSmoothInt, imgLabels))
 
 with the result being stored under `imgLabels`:
 
-![Label overlay showing both white and gray matter.](MyHead_06.png)
+![Label overlay showing both white and gray matter.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_06.png)
 
 However, note the cyan-colored label! Those are regions 'claimed' by both the white-matter and gray-matter labels due to our lazy segmentation. As we can see, the majority of those regions should actually be part of the gray matter so let's do exactly that:
 
@@ -390,7 +390,7 @@ Then we just multiply those common regions by `labelWhiteMatter` to switch its v
 
 Finally, we recreate `imgLabels` by adding `imgWhiteMatterNoHoles` and `imgGrayMatterNoHoles` and the result of `sitk_show` can be seen below:
 
-![Label overlay showing both white and gray matter after assigning the common regions to gray matter.](MyHead_07.png)
+![Label overlay showing both white and gray matter after assigning the common regions to gray matter.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_07.png)
 
 > The above code was mostly meant to show you the power of the overloaded operators and their effect on image data. There are many, more appropriate, filters in [SimpleITK](http://www.simpleitk.org/) to do the above but I just wanted you to see how easy it is to play around with your images.
 
@@ -400,7 +400,7 @@ As a final treat lets visualize the two labels as edge-only contours using the [
 sitk_show(SimpleITK.LabelOverlay(imgSmoothInt, SimpleITK.LabelContour(imgLabels)))
 ```
 
-![Label overlay showing both white and gray matter as edge-only contours.](MyHead_08.png)
+![Label overlay showing both white and gray matter as edge-only contours.](http://pyscience.files.wordpress.com/2014/10/wpid-myhead_08.png)
 
 # Outro
 As you can see, my segmentation was by no means perfect. Far from it actually as the gray matter unjustly claimed regions of white matter in nooks and crannies. However, a perfect segmentation wasn't the point of this post. 
