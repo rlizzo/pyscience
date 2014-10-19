@@ -4,12 +4,12 @@ Date: Friday October 4th, 2014
 Tags: Python, IPython Notebook, DICOM, VTK, ITK, SimpleITK, Medical Image Processing, Image Segmentation
 Categories: Image Processing, Visualization, VTK
 
-In this post I will demonstrate SimpleITK, an abstraction layer over the ITK library, to segment/label the white and gray matter from an MRI dataset. I will start with an intro on what SimpleITK is, what it can do, and how to install it. The tutorial will include loading a DICOM file-series, image smoothing/denoizing, region-growing image filters, binary hole filling, as well as visualization tricks.
+In this post I will demonstrate SimpleITK, an abstraction layer over the ITK library, to segment/label the white and gray matter from an MRI dataset. I will start with an intro on what SimpleITK is, what it can do, and how to install it. The tutorial will include loading a DICOM file-series, image smoothing/denoising, region-growing image filters, binary hole filling, as well as visualization tricks.
 
 ---
 
 # Introduction
-I think that by this point you've had enough of [VTK](http://www.vtk.org/) and its obscure, bordering on the occult, inner-workings. I admit that the topics I covered so far were not that much about visualization but mostly about 'secondary' functionality of VTK. However, information and examples on the former can be found with relative ease and I've posted a few such links in this [early post about IPython & VTK](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/).
+I think that by this point you may've had enough of [VTK](http://www.vtk.org/) and its obscure, bordering on the occult, inner-workings. I admit that the topics I covered so far were not that much about visualization but mostly about 'secondary' functionality of VTK. However, information and examples on the former can be found with relative ease and I've posted a few such links in this [early post about IPython & VTK](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/).
 
 Today I'll be branching off and talking about its cousin, the [Insight Segmentation and Registration Toolkit (ITK)](http://www.itk.org/), a library created by the same fine folk as [VTK](http://www.vtk.org/), i.e., [Kitware](http://www.kitware.com/), but which focuses on image processing.
 
@@ -50,7 +50,7 @@ However, the power of [SimpleITK](http://www.simpleitk.org/), doesn't end in all
 - Super-simple IO of multi-dimensional image data supporting most image file formats (including DICOM through the infamous [Grassroots DICOM library (GDCM)](http://gdcm.sourceforge.net/wiki/index.php/Main_Page), more on that later).
 - A fantastic `SimpleITK.Image` class which handles all image data and which includes overloads for all basic arithmetic (`+` `-` `*` `/` `//` `**`) and binary (`&` `|` `^` `~`) operators. These operators just wrap the corresponding ITK filter and operate on a pixel-by-pixel basis thus allowing you to work directly on the image data without long function calls and filter configuration.
 - Slicing capability akin to that seen in `numpy.ndarray` objects allowing you to extract parts of the image, crop it, tile it, flip it, etc etc. While slicing in [SimpleITK](http://www.simpleitk.org/) is not as powerful as NumPy, its still pretty darn impressive (not to mention invaluable)!
-- Built-in support for two-way conversion between `sitk.Image` object and `numpy.ndarray` (there's a catch though, more on that later as well).
+- Built-in support for two-way conversion between `SimpleITK.Image` object and `numpy.ndarray` (there's a catch though, more on that later as well).
 - No pipeline! Those who read my previous posts on VTK, will be aware of that pipeline monstrosity VTK is built upon. Well, [SimpleITK](http://www.simpleitk.org/) does away with that and all operations are immediate (a much more pythonic paradigm).
 
 You'll find a fair number of links to [SimpleITK](http://www.simpleitk.org/) material at the end of this post.
@@ -82,7 +82,7 @@ pip install --use-wheel <whl filename>
 ### Anaconda Python
 Unfortunately, here's where the trouble starts. Alternative Python distros like the [Anaconda Python](https://store.continuum.io/cshop/anaconda/), [Enthought Python](https://www.enthought.com/products/epd/), [Enthought Canopy](https://www.enthought.com/products/canopy/), or even the OSX [MacPorts](https://www.macports.org/) and [Homebrew](http://brew.sh/) Python, have their own version of the Python interpreters and dynamic libraries. 
 
-However, the aforementioned [SimpleITK wheels and eggs](http://www.simpleitk.org/SimpleITK/resources/software.html) are all compiled and linked against vanilla Python interpreters, and should you make the noob mistake of installing one of those in a non-vanilla environment, then upon importing that package you'll most likely get the following infamous error:
+However, the aforementioned [SimpleITK wheels and eggs](http://www.simpleitk.org/SimpleITK/resources/software.html) are all compiled and linked against vanilla Python interpreters, and should you make the very common mistake of installing one of those in a non-vanilla environment, then upon importing that package you'll most likely get the following infamous error:
 
 ```
 Fatal Python error: PyThreadState_Get: no current thread
@@ -112,7 +112,7 @@ This last one is exactly the case today. I compiled the latest [SimpleITK](http:
 
 If you're using Anaconda Python the you simply need to download the appropriate `.egg` and install it through `easy_install <egg filename>`. Uninstalling it is as easy as `pip uninstall simpleitk`.
 
-> If you're using an Anaconda environment, e.g. named `py27` environment as instructed in [this past post](pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), then you need to activate that environment prior to installing the package through `activate py27` (Windows) or `source activate py27` (Linux). Also, make sure that environment contains `pip` and `setuptools` before installing the `.egg`. Otherwise, `pip` will be called through the `root` Anaconda environment and be installed in that environment instead.
+> If you're using an Anaconda environment, e.g. named `py27` environment as instructed in [this past post](pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/), then you need to activate that environment prior to installing the package through `activate py27` (Windows) or `source activate py27` (Linux/OSX). Also, make sure that environment contains `pip` and `setuptools` before installing the `.egg`. Otherwise, `pip` will be called through the `root` Anaconda environment and be installed in that environment instead.
 
 ## Summary 
 The purpose of today's post was to introduce you to [SimpleITK](http://www.simpleitk.org/), show you how to install it, and give you a taste of its image-processing prowess. 
@@ -195,18 +195,18 @@ labelWhiteMatter = 1
 labelGrayMatter = 2
 ```
 
-First of all we define the path where the `.dcm` files are under. Once more, you can get the MRI dataset of my head under [here](https://bitbucket.org/somada141/pyscience/raw/master/20141001_SegmentationSimpleITK/Material/MyHead.zip) whose contents you should extract next to [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141001_SegmentationSimpleITK/Material/SegmentationSimpleITK.ipynb).
+First of all we define the path where the `.dcm` files are under, i.e., `pathDicom`. Once more, you can get the MRI dataset of my head under [here](https://bitbucket.org/somada141/pyscience/raw/master/20141001_SegmentationSimpleITK/Material/MyHead.zip) whose contents you should extract next to [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141001_SegmentationSimpleITK/Material/SegmentationSimpleITK.ipynb).
 
-I want emphasize the 2nd option. As I explain in the comments, I'm going to be limiting the segmentation to a single 2D slice of the DICOM dataset. The reason for this is not because the process would become too computationally expensive (clearly slower but not by much) but rather for the sake of clarity. 
+I want to emphasize the 2nd option. As I explain in the comments, I'm going to be limiting the segmentation to a single 2D slice of the DICOM dataset. The reason for this is not because the process would become too computationally expensive (clearly slower but not by much) but rather for the sake of clarity. 
 
-When it comes to image segmentation, and especially when using algorithms based on region-growing and pixel-connectivity, application to the full 3D image might yield non-intuitive results, e.g., regions that seem entirely disconnected when viewed on one cross-section but are connected further down the slices through some small structure. Therefore, and since I'll only be using 2D visualization, I wanted to keep things clear.
+When it comes to image segmentation, and especially when using algorithms based on region-growing and pixel-connectivity, application to the full 3D image might yield non-intuitive results. For examples, regions might seem entirely disconnected when viewed on one cross-section but end up being connected further down the slices through some small structure. Therefore, and since I'll only be using 2D visualization, I wanted to keep things clear.
 
 I should stress that the code I'll be presenting is entirely applicable to the full 3D image but the parameters used in the function calls, e.g. seed-point indices, won't be. Image segmentation is mostly about trial-n-error so try away.
 
-Lastly, note the two `labelWhiteMatter` and `labelGrayMatter`. These are simply two integer values, which will act as label indices in the segmentation as we want the different tissues to be characterized by a different index. Its simple as that.
+Lastly, note `labelWhiteMatter` and `labelGrayMatter`. These are simply two integer values, which will act as label indices in the segmentation as we want the different tissues to be characterized by a different index. Its as simple as that.
 
 ## Loading the DICOM files
-Now let's move onto reading the DICOM files. Remember you have to extract the contents of the [MRI dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141001_SegmentationSimpleITK/Material/MyHead.zip), i.e., my head, along side today's notebook.
+Now let's move onto reading the DICOM files. Remember you have to extract the contents of the [MRI dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141001_SegmentationSimpleITK/Material/MyHead.zip), i.e., my head, alongside today's notebook.
 
 ```
 reader = SimpleITK.ImageSeriesReader()
@@ -215,13 +215,13 @@ reader.SetFileNames(filenamesDICOM)
 imgOriginal = reader.Execute()
 ```
 
-Reading the entirety of the DICOM file series is as simple as this: We start by creating a new [`ImageSeriesReader`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1ImageSeriesReader.html) object under the name `reader`.  We then use the `GetGDCMSeriesFileNames` static method of the `ImageSeriesReader` to retrieve a list of all `.dcm` filenames which we store under `filenamesDICOM` and which we then pass back to the `reader` through the `SetFileNames` method. Finally, by calling `Execute` we retrieve the entire 3D image under `imgOriginal`. 
+Reading the entirety of the DICOM file series goes as follows: We start by creating a new [`ImageSeriesReader`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1ImageSeriesReader.html) object under the name `reader`.  We then use the `GetGDCMSeriesFileNames` static method of the `ImageSeriesReader` to retrieve a list of all `.dcm` filenames which we store under `filenamesDICOM` and which we then pass back to the `reader` through the `SetFileNames` method. Finally, by calling `Execute` we retrieve the entire 3D image under `imgOriginal`. 
 
 > If you get a dead kernel here then please do check the console output. It might well be that you forgot to extract the DICOM files out of their .zip or that you've placed them under a different directory to the one under `pathDicom`.
 
-A **very** important point I want to stress here is that [SimpleITK](http://www.simpleitk.org/) uses the [Grassroots DICOM library (GDCM)](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) to load DICOM files. As a result, those pesky JPEG compressed DICOM files, e.g., the ones found in the [Osirix Datasets page](http://www.osirix-viewer.com/datasets/), we couldn't load with either PyDICOM or VTK in the [past post about Python and DICOM](pyscience.wordpress.com/2014/09/08/dicom-in-python-importing-medical-image-data-into-numpy-with-pydicom-and-vtk/), are no longer a deterrence. [GDCM](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) is actually the most comprehensive DICOM library I know of so you should be able to handle pretty much any DICOM file :).
+A **very** important point I want to stress here is that [SimpleITK](http://www.simpleitk.org/) uses the [Grassroots DICOM library (GDCM)](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) to load DICOM files. As a result, those pesky JPEG compressed DICOM files, e.g., the ones found in the [Osirix Datasets page](http://www.osirix-viewer.com/datasets/), which we couldn't load with either PyDICOM or VTK in the [past post about Python and DICOM](pyscience.wordpress.com/2014/09/08/dicom-in-python-importing-medical-image-data-into-numpy-with-pydicom-and-vtk/), are no longer a deterrence. [GDCM](http://gdcm.sourceforge.net/wiki/index.php/Main_Page) is actually the most comprehensive DICOM library I know of so you should be able to handle pretty much any DICOM file :).
 
-Then, as I mentioned in the *Options* section, we limit ourselves to a single 2D slice of the 3D volume. We do so by using the basic indexing offered by the `SimpleITK.Image` class:
+Then, as I mentioned in the *Options* section, we limit ourselves to a single 2D slice of the 3D volume. We do so by using the basic slicing offered by the `SimpleITK.Image` class:
 
 ```
 imgOriginal = imgOriginal[:,:,idxSlice]
@@ -257,17 +257,17 @@ sitk_show(imgSmooth)
 
 The [`CurvatureFlowImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1CurvatureFlowImageFilter.html#details) class *"implements a curvature driven image denoising algorithm"*. The math behind this filter are based on a finite-differences algorithm and are quite convoluted. Should you feel like it, you can read more about the algorithm in the [class' docs](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1CurvatureFlowImageFilter.html#details). 
 
-A point I'd like to make here is that all of the image filters in [SimpleITK](http://www.simpleitk.org/) can be called in one of two ways. The first way is to directly call a function, `CurvatureFlow` in this case, which nicely wraps all required filter parameters as function arguments. This is the way we're calling it above. 
+A point I'd like to make here is that all of the image filters in [SimpleITK](http://www.simpleitk.org/) can be called in one of two ways. The first way is to directly call a function, `CurvatureFlow` in this case, which nicely wraps all required filter parameters as function arguments (while also exposing optional arguments). This is the way we're calling it above. 
 
 However, as you can see in the commented code, an alternative would be to create a filter object, `CurvatureFlowImageFilter` in this case, and set the required parameters one-by-one through the corresponding methods before calling the `Execute` method.
 
-The above holds for all image filters included in [SimpleITK](http://www.simpleitk.org/). The filter class itself typically has an `ImageFilter` suffix while the corresponding wrapper function maintains the same name minus that suffix. Both approaches however wrap the same filters and which one to use is a matter of preference.
+The above holds for all image filters included in [SimpleITK](http://www.simpleitk.org/). The filter class itself typically has an `ImageFilter` suffix while the corresponding wrapper function maintains the same name minus that suffix. Both approaches, however, wrap the same filters and which one to use is a matter of preference.
 
 > Henceforth I will be using the direct function calls in the code but I'll be referencing the filter class as there's no docs for the former. 
 
 Regardless of the calling-paradigm, we end up with a `imgSmooth` image which contains the results of the smoothing. Using `sitk_show` we get the following figure:
 
-![Image after smoothing with a `CurvatureFlow` filter.](MyHead_02.png)
+![Image after smoothing/denoising with a `CurvatureFlow` filter.](MyHead_02.png)
 
 > I should mention that image-smoothing is a very typical first step in the medical image data segmentation process, 'required' by the majority of segmentation algorithms.
 
@@ -292,7 +292,7 @@ So, we start by create a `list` of `tuple` objects with the 2D indices of the se
 
 > Note that we operate on `imgSmooth` and not `imgOriginal`. That was the whole point of de-noising `imgOriginal` anyway right?
 
-Next, the reasonable thing to do would be to inspect the result of the segmentation. We could simply use `sitk_show`, passing `imgWhiteMatter`, but all we would see would be a white-color label in a black back-drop which doesn't exactly give us much  insight. Therefore, we'll instead view this newly acquired label overlaid with `imgSmooth`, i.e., the input-image we used for the segmentation, using the [`SimpleITK.LabelOverlayImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1LabelOverlayImageFilter.html) class:
+Next, the reasonable thing to do would be to inspect the result of the segmentation. We could simply use `sitk_show`, passing `imgWhiteMatter`, but all we would see would be a white-color label in a black backdrop which doesn't exactly give us much  insight. Therefore, we'll instead view this newly acquired label overlaid with `imgSmooth`, i.e., the input-image we used for the segmentation, using the [`SimpleITK.LabelOverlayImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1LabelOverlayImageFilter.html) class:
 
 ```
 # Rescale 'imgSmooth' and cast it to an integer type to match that of 'imgWhiteMatter'
@@ -302,7 +302,7 @@ imgSmoothInt = SimpleITK.Cast(SimpleITK.RescaleIntensity(imgSmooth), imgWhiteMat
 sitk_show(SimpleITK.LabelOverlay(imgSmoothInt, imgWhiteMatter))
 ```
 
-Here I want to stress the following point: the result of the de-noising, i.e., `imgSmooth` comprises pixels with `float` values while the result of the segmentation is of `int` type. Mixing the two won't work, or will at least have unforeseen results. Therefore, we need to first 'rescale' `imgSmooth` to the same integer range and then cast it so that the types of the two images, i.e., `imgSmooth` and `imgWhiteMatter` match. 
+Here I want to stress the following point: the result of the de-noising, i.e., `imgSmooth`, comprises pixels with `float` values while the result of the segmentation is of `int` type. Mixing the two won't work, or will at least have unforeseen results. Therefore, we need to first 'rescale' `imgSmooth` to the same integer range and then cast it so that the types of the two images, i.e., `imgSmooth` and `imgWhiteMatter`, match. 
 
 We do that by first using the [`RescaleIntensityImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1RescaleIntensityImageFilter.html) with its range to the default values of `0` and `255`. Subsequently, we 'cast' the image to the same type as `imgWhiteMatter` by using the [`CastImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1CastImageFilter.html) and the `GetPixelID` method of the `SimpleITK.Image` class. As a result we get an integer version of `imgSmooth` dubbed `imgSmoothInt`. 
 
@@ -331,7 +331,7 @@ sitk_show(SimpleITK.LabelOverlay(imgSmoothInt, imgWhiteMatterNoHoles))
 
 As you can see we once more skip the whole 'initialize filter-configure filter-execute filter' process and run the wrapper straight away. If my crummy explanation above wasn't sufficient then off to the [`VotingBinaryHoleFillingImageFilter` docs](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1VotingBinaryHoleFillingImageFilter.html). Let me just say that the `radius` defines the pixel area/volume around a hole that is examined and the `majorityThreshold` is the number of pixels over `50%` that need to be 'on' for that hole pixel to be turned 'on'.
 
-The result of the hole-filling operation is stored under `imgWhiteMatterNoHoles` and we once more overlay this new label with `imgSmoothInt` getting the next figure. As you can see the operation wasn't wildly successful but many of the smaller holes were indeed filled. All this means is that we should've imposed looser criteria, e.g., a larger `radius`. However, I intentionally left it as such to remind you once more of the trial-n-error nature of image segmentation.
+The result of the hole-filling operation is stored under `imgWhiteMatterNoHoles` and we once more overlay this new label with `imgSmoothInt` getting the next figure. As you can see the operation wasn't wildly successful but many of the smaller holes were indeed filled. All this means is that we should've imposed looser criteria, e.g., a larger `radius`. 
 
 ![Label overlay showing the results of the hole-filling operation on the white-matter.](MyHead_04.png)
 
@@ -360,8 +360,8 @@ As you can see, apart from defining four different seeds and changing the thresh
 
 ![Label overlay showing the results of the gray-matter's segmentation and hole-filling.](MyHead_05.png)
 
-### Labelfield mathematics
-Lastly, we want to combine the two labelfields, i.e., the white and gray matter. As I mentioned in the *Introduction*, the `SimpleITK.Image` class overloads and supports all binary and arithmetic operators. Hence, combining the two labelfields is as easy as a simple OR operator (`|`):
+### Label-field mathematics
+Lastly, we want to combine the two label-fields, i.e., the white and gray matter. As I mentioned in the *Introduction*, the `SimpleITK.Image` class overloads and supports all binary and arithmetic operators. Hence, combining the two label-fields is as easy as a simple OR operator (`|`):
 
 ```
 imgLabels = imgWhiteMatterNoHoles | imgGrayMatterNoHoles
@@ -392,7 +392,9 @@ Finally, we recreate `imgLabels` by adding `imgWhiteMatterNoHoles` and `imgGrayM
 
 ![Label overlay showing both white and gray matter after assigning the common regions to gray matter.](MyHead_07.png)
 
-As a final treat lets visualize the two labels are edge-only contours using the [`LabelContourImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1LabelContourImageFilter.html) class.
+> The above code was mostly meant to show you the power of the overloaded operators and their effect on image data. There are many, more appropriate, filters in [SimpleITK](http://www.simpleitk.org/) to do the above but I just wanted you to see how easy it is to play around with your images.
+
+As a final treat lets visualize the two labels as edge-only contours using the [`LabelContourImageFilter`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1LabelContourImageFilter.html) class.
 
 ```
 sitk_show(SimpleITK.LabelOverlay(imgSmoothInt, SimpleITK.LabelContour(imgLabels)))
@@ -405,9 +407,9 @@ As you can see, my segmentation was by no means perfect. Far from it actually as
 
 Image segmentation is inherently interactive and repetitive, which is why there are dozens of applications out there neatly wrapping functionality such as what we saw today in a GUI. If you want to perform 'proper' segmentations of medical image data then take a look at applications like [TurtleSeg](http://www.turtleseg.org/), [ITK-SNAP](http://sourceforge.net/projects/itk-snap/), [MITK](http://www.mitk.org/MITK), etc etc. Google's your friend :).
 
-The point of this post, however, was to introduce you to [SimpleITK](http://www.simpleitk.org/), a truly simplified interface to a very powerful library. As I said in the intro, I barely scraped the surface here and there's still a lot of very interesting functionality to explore, e.g., multi-modal segmentation, image interpolation, and image registration being the topics I will be delving into next. 
+The point of this post, however, was to introduce you to [SimpleITK](http://www.simpleitk.org/), a truly simplified interface to a very powerful library. As I said in the intro, I barely scraped the surface here and there's still a lot of very interesting functionality to explore.
 
-Before I close, I'd like to note that going from a labelfield, such as the one we saw above, to a 3D surface is rather easy. All one would need to do is segment the full 3D image data and then use a surface extraction algorithm on each label much like what I presented in [this past post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/).
+Before I close, I'd like to note that going from a label-field, such as the one we saw above, to a 3D surface is rather easy. All one would need to do is segment the full 3D image data and then use a surface extraction algorithm on each label much like what I presented in [this past post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/).
 
 ## Links & Resources
 
