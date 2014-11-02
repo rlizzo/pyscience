@@ -117,7 +117,7 @@ sitk_show(SimpleITK.Tile(imgT1Original[:, :, idxSlice],
 
 The [`TileImageFilter` class](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1TileImageFilter.html) *"tiles multiple input images into a single output image using a user-specified layout"*. Essentially, you pass a series of [`SimpleITK.Image`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1Image.html) objects, either as separate function arguments or within a `list`, and you get a tiled output image with the layout defined through a `tuple`. The result of `sitk_show` is shown below:
 
-![Transverse cross-sections through the unmodified T1 and T2 MR image data.](figure01.png)
+![Transverse cross-sections through the unmodified T1 and T2 MR image data.](http://pyscience.files.wordpress.com/2014/11/wpid-figure01.png)
 
 > As you can see, I'll be using direct calls to the class wrappers defined for the different filters in [SimpleITK](http://www.simpleitk.org/). The different between direct calls and the procedural interface offered by [SimpleITK](http://www.simpleitk.org/) was extensively discussed in [this previous post](http://pyscience.wordpress.com/2014/10/19/image-segmentation-with-python-and-simpleitk/).
 
@@ -142,7 +142,7 @@ sitk_show(SimpleITK.Tile(imgT1Smooth[:, :, idxSlice],
 
 Note that the smoothened images now reside under `imgT1Smooth` and `imgT2Smooth` respectively. Once more, using [`TileImageFilter` class](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1TileImageFilter.html) and the `sitk_show` helper-function we get the next figure.
 
-![Transverse cross-sections through the smoothened T1 and T2 MR image data.](figure02.png)
+![Transverse cross-sections through the smoothened T1 and T2 MR image data.](http://pyscience.files.wordpress.com/2014/11/wpid-figure02.png)
 
 ## Seed Definition
 Next, we need to define a series of 'seeds', i.e., points in the image data where we want the region-growing segmentation algorithms to start from. Again, these things were explained in the [previous post](http://pyscience.wordpress.com/2014/10/19/image-segmentation-with-python-and-simpleitk/). Here's the code:
@@ -163,7 +163,7 @@ sitk_show(imgSeeds[:, :, idxSlice])
 
 Note that we only defined seed points on the slice defined by `idxSlice` so we can easily visualize them. What's interesting here is the way we're creating a 'dummy' image, i.e., `imgSeeds` by using the [`SimpleITK.Image`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1Image.html) constructor and the `imgT2Smooth` image. What this operation does is essentially deep-copy `imgT2Smooth` into `imgSeeds` allowing us to ruin the latter without affecting the former. We then loop through the seeds defined in `lstSeeds` and set those pixels to a high value so they will stand out and allow us to see them through `sitk_show`. The resulting image is the following:
 
-![Segmentation seeds defined for the region-growing algorithms.](figure03.png)
+![Segmentation seeds defined for the region-growing algorithms.](http://pyscience.files.wordpress.com/2014/11/wpid-figure03.png)
 
 As explained in the [previous post about SimpleITK](http://pyscience.wordpress.com/2014/10/19/image-segmentation-with-python-and-simpleitk/), the index order in [SimpleITK](http://www.simpleitk.org/) is the reverse from that in NumPy. Please do read up on that part as it can be confusing and remember that the result of the visualization is based on the conversion of the [`SimpleITK.Image`](http://www.itk.org/SimpleITKDoxygen/html/classitk_1_1simple_1_1Image.html) object to a [`numpy.ndarray`](http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html) one.
 
@@ -224,7 +224,7 @@ Note that much like what was done in the [previous post](http://pyscience.wordpr
 
 Also, note that we're using the auxiliary function `sitk_tile_vec` we defined previously to tile these label overlays. The result of `sitk_tile_vec` is shown below.
 
-![Result of uni-modal segmentation performed on each of the T1 and T2 images.](figure04.png)
+![Result of uni-modal segmentation performed on each of the T1 and T2 images.](http://pyscience.files.wordpress.com/2014/11/wpid-figure04.png)
 
 Now take a look at the results of the segmentation. In the T1 image (left) the algorithm did quite a good job covering the majority of the gray matter. However, multiple areas of the skin and fat were also included. In the case of the T2 image (right) the results were nowhere near as good. Multiple areas of gray matter were not segmented despite the large number of iterations. You can experiment with the `numberOfIterations` and `multiplier` parameters if you want but chances are you'll end up segmenting the entire head. Alternatively you can apply more stringent criteria and up the number of seed points. However, here's where multi-modal segmentation comes into play.
 
@@ -252,7 +252,7 @@ Then all we need to do is perform the segmentation. However, as you see in the a
 
 Note that we're using the same seeds but much more stringent criteria, i.e., low `multiplier` value, and only `1` iteration! The result can be seen below:
 
-![Result of multi-modal segmentation performed on T1+T2 composite image.](figure05.png)
+![Result of multi-modal segmentation performed on T1+T2 composite image.](http://pyscience.files.wordpress.com/2014/11/wpid-figure05.png)
 
 As you can see, the results are quite great. Not only did we get rid of the skin and fat parts that segmentation on the T1 image gave us, but we also segmented pretty much all gray matter! Of course the segmentation is not perfect as multiple areas of white matter are also segmented but given our lazy approach they're pretty decent.
 
@@ -264,7 +264,7 @@ SimpleITK.WriteImage(imgGrayMatterComp, "GrayMatter.mhd")
 
 You can download the [`.mhd`](https://bitbucket.org/somada141/pyscience/raw/master/20141016_MultiModalSegmentation/Material/GrayMatter.mhd) and accompanying [`.raw`](https://bitbucket.org/somada141/pyscience/raw/master/20141016_MultiModalSegmentation/Material/GrayMatter.raw) directly from the [Bitbucket repo of this blog](https://bitbucket.org/somada141/pyscience). Now we can open this file with any of the software supporting the MHD format. In our case I opened it in [ParaView](http://www.paraview.org/) and used the built-in `Contour` filter to get a 3D iso-surface of our segmentation which you can see in the next figure. 
 
-![Isosurface of the multi-modal segmentation performed on each of the T1 and T2 images.](figure06.png)
+![Isosurface of the multi-modal segmentation performed on each of the T1 and T2 images.](http://pyscience.files.wordpress.com/2014/11/wpid-figure06.png)
 
 ## Links & Resources
 
