@@ -1,8 +1,8 @@
 Title: Volume Rendering with Python and VTK
 Author: Adamos Kyriakou
 Date: Friday October 29th, 2014
-Tags: Python, IPython Notebook, VTK, Medical Image Processing, Volume Rendering, Interpolation
-Categories: Image Processing, Visualization, ITK/SimpleITK, Image Segmentation, IO, VTK
+Tags: Python, IPython Notebook, VTK, Medical Image Processing, Volume Rendering
+Categories: Image Processing, Visualization, IO, VTK
 
 
 <!--more-->
@@ -177,7 +177,173 @@ At this point we have both the color-function and the scalar opacity-function se
 
 As stated above, the scalar opacity function simply assigns an opacity value per pixel-intensity, or to simplify in our case, tissue. However, that typically results in rather homogeneous looking renderings where the outer tissues dominate the image (unless hidden with a low opacity value). 
 
-Here's where gradient opacity functions come into play. Through such a function we map the scalar spatial gradient, i.e., the degree at which the scalar changes through space, to an opacity multiplier. These gradients tend to be small while 'traveling' through a homogeneous region, e.g., within a tissue, while they became larger when crossing between different tissues.
+Here's where gradient opacity functions come into play. Through such a function we map the scalar spatial gradient, i.e., the degree at which the scalar changes through space, to an opacity multiplier. These gradients tend to be small while 'traveling' through a homogeneous region, e.g., within a tissue, while they became larger when crossing between different tissues. Thus through such a function we can make the 'inside' of tissues rather transparent while making the boundaries between tissues more prominent, giving a clearer picture of the entire volume.
+
+Here's the more or less arbitrary function I've defined in this case:
+
+```
+funcOpacityGradient = vtk.vtkPiecewiseFunction()
+
+funcOpacityGradient.AddPoint(1,   0.0)
+funcOpacityGradient.AddPoint(5,   0.1)
+funcOpacityGradient.AddPoint(100,   1.0)
+```
+
+As you can see this function is again defined through a [`vtkPiecewiseFunction`](http://www.vtk.org/doc/nightly/html/classvtkPiecewiseFunction.html) object. Again, this function was pretty much arbitrary as I didn't want to spend hours defining optimal opacities and multipliers for the purposes of this post but rather introduce you to the mechanics of it all.
+
+Through the above function, pixels with a low gradient of up to `1.0` will have their opacity multiplied by `0.0`. Pixels with a gradient between `1` and `5` will get a opacity multipler between `0.0` and  `0.1`, while pixel values above `5` will get a multiplier on the slope up to `1.0`. ???
+
+### Volume Properties
+I promise the hardest part's over. I just feel like I should remind you that the definition of transfer function is what makes or breaks the result of the volume rendering so expect to spend the majority of your time experimenting with those aspects.
+
+Now let's define the basic properties of the volume:
+
+```
+propVolume = vtk.vtkVolumeProperty()
+propVolume.ShadeOff()
+propVolume.SetColor(funcColor)
+propVolume.SetScalarOpacity(funcOpacityScalar)
+propVolume.SetGradientOpacity(funcOpacityGradient)
+propVolume.SetInterpolationTypeToLinear()
+```
+
+As you can see, the whole thing comes down to creating and configuring a [`vtkVolumeProperty`](http://www.vtk.org/doc/nightly/html/classvtkVolumeProperty.html) object which *"represents the common properties for rendering a volume"*. For the purposes of this post I'm turning shading off as I would otherwise need to delve into convoluted lighting math and mechanics. 
+
+Subsequently, we assign the three transfer functions to the volume properties through the `SetColor`, `SetScalarOpacity`, and `SetGradientOpacity` methods and the `funcColor`, `funcOpacityScalar`, and `funcOpacityGradient` functions we defined before. 
+
+Lastly, we have the type of interpolation used for this volume. Our choices here are nearest-neighbor interpolation, set through the `SetInterpolationTypeToNearest` method, and linear interpolation set through the `SetInterpolationTypeToLinear` method. Typically, when dealing with discrete data, as is the label-field in our case, we would chose nearest-neighbor interpolation as then we wouldn't introduce 'new' values that don't match any of the tissues. Linear interpolation is usually employed when we have continuous data as it provides smoother transitions. However, in this case I found the renderings to be prettier with linear interpolation but feel free to experiement with this.
+
+## Volume Rendering
+The moment you've all been waiting for. The actual volume rendering. Now VTK comes with several different routines to perform volume rendering, each of which has different pros/cons and requirements. However, I am not going to delve into the specifics of each. As I said before, volume rendering is relatively well documented in VTK and you should check the class docs for each of the classes I'll be presenting. In addition, it'd be good for you to check the links I'm listing at the end of the post.
+
+Since I'll be presenting different volume rendering examples I'll be repeating the entirety of the necessary code for each case so you can change little things and re-run the particular cell in [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb) in order to assess how your changes affected the particular rendering.
+
+### vtkVolumeRayCastMapper
+The [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) is the 'classic' volume rendering class in VTK advertising itself as a *"slow but accurate mapper for rendering volumes"*.
+
+As its name implies the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class performs volume rendering by means of ray-casting through an appropriate ray-casting function of type ['http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastFunction.html'](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastFunction.html). 
+
+This function can be on of the following three:
+
+- [`vtkVolumeRayCastCompositeFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastCompositeFunction.html): *"performs compositing along the ray according to the properties stored in the vtkVolumeProperty for the volume"*.
+- [`vtkVolumeRayCastMIPFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMIPFunction.html): *"computes the maximum value encountered along the ray"*.
+- [`vtkVolumeRayCastIsosurfaceFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastIsosurfaceFunction.html): *"intersects a ray with an analytic isosurface in a scalar field"*.
+
+As I don't think highly of the rendering results produced by the [`vtkVolumeRayCastMIPFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMIPFunction.html) class and [`vtkVolumeRayCastIsosurfaceFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastIsosurfaceFunction.html) classes, I chose to demonstrate the usage of the [`vtkVolumeRayCastCompositeFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastCompositeFunction.html) class. Let's take a look at the code:
+
+```
+funcRayCast = vtk.vtkVolumeRayCastCompositeFunction()
+funcRayCast.SetCompositeMethodToClassifyFirst()
+
+mapperVolume = vtk.vtkVolumeRayCastMapper()
+mapperVolume.SetVolumeRayCastFunction(funcRayCast)
+mapperVolume.SetInput(imdataBrainSeg)
+
+actorVolume = vtk.vtkVolume()
+actorVolume.SetMapper(mapperVolume)
+actorVolume.SetProperty(propVolume)
+
+renderer = createDummyRenderer()
+renderer.AddActor(actorVolume)
+
+vtk_show(renderer, 600, 600)
+```
+
+As you can see, we first create a new object called `funcRayCast` of type [`vtkVolumeRayCastCompositeFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastCompositeFunction.html). Then we set the function to first classify the pixels it encounters before interpolating through the `SetCompositeMethodToClassifyFirst` method. This keeps the labels relative homogenized but if we decided to go the other way around with the `SetCompositeMethodToInterpolateFirst` method, the different labels would get mangled and we'd get a messy rendering (just change it and see).
+
+Next, we need to create a volume mapper. As discussed we create a new [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) object under the name of `mapperVolume` and feed it the newly created ray-casting function `funcRayCast` through the `SetVolumeRayCastFunction` method. Lastly, we feed it the actual image data we're rendering which are stored in the `imdataBrainSeg` object.
+
+> Remember: The [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class only works with `unsigned char` and `unsigned short` data which is why we cast the image data upon loading it.
+
+Subsequently, we create a ['vtkVolume'](http://www.vtk.org/doc/nightly/html/classvtkVolume.html) object under 'actorVolume' which is the equivalent of a ['vtkActor'](http://www.vtk.org/doc/nightly/html/classvtkActor.html) but meant for volumetric data. We set the mapper to `mapperVolume` and the properties to the [`vtkVolumeProperty`](http://www.vtk.org/doc/nightly/html/classvtkVolumeProperty.html) object `propVolume` we created during the preparation.
+
+Lastly, we just go through the pre-rendering motions. We create a new renderer through the `createDummyRenderer` helper-function we defined in the beginning and add `actorVolume` to it before calling `vtk_show` on it. The results can be seen in the next figure.
+
+![](figure02.png)
+
+Well... that looks rather crummy doesn't it? The dataset just has way too many tissues and the cerebral gyri just mix with one another, 'twas a hard customer. We could have improved the result by carefully configuring the opacity functions but that wasn't the point of this post. At the very least let's take a look through the volume so we can at least feel like we rendered a volume.
+
+#### Clipping
+The [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class, and really all volume mappers I'm aware of in VTK, support clipping! In order to use clipping we first need to create a plane with the appropriate location and orientation. Here's how its done:
+
+```
+_origin = l2n(imdataBrainSeg.GetOrigin())
+_spacing = l2n(imdataBrainSeg.GetSpacing())
+_dims = l2n(imdataBrainSeg.GetDimensions())
+_center = n2l(_origin+_spacing*(_dims/2.0))
+
+planeClip = vtk.vtkPlane()
+planeClip.SetOrigin(_center)
+planeClip.SetNormal(0.0, 0.0, -1.0)
+```
+
+The above is as simple as anything so here comes the short version: We're using the appropriate methods of the [`vtkImageData`](http://www.vtk.org/doc/nightly/html/classvtkImageData.html) to retrieve the origin coordinates, spacing, and dimensions of our image data and use the `l2n` helper-function to quickly convert those lists to `numpy.ndarray` objects allowing us to perform some math with them. Then, we calculate the center coordinates of the image data and store it under `_center`. 
+
+All we then need to is create a new [`vtkPlane`](http://www.vtk.org/doc/nightly/html/classvtkPlane.html), set its origin to the center of the image data, and its normal to the negative Z axis. Then we just repeat the volume-rendering code that we saw just before:
+
+```
+funcRayCast = vtk.vtkVolumeRayCastCompositeFunction()
+funcRayCast.SetCompositeMethodToClassifyFirst()
+
+mapperVolume = vtk.vtkVolumeRayCastMapper()
+mapperVolume.SetVolumeRayCastFunction(funcRayCast)
+mapperVolume.SetInput(imdataBrainSeg)
+mapperVolume.AddClippingPlane(planeClip)
+
+actorVolume = vtk.vtkVolume()
+actorVolume.SetMapper(mapperVolume)
+actorVolume.SetProperty(propVolume)
+
+renderer = createDummyRenderer()
+renderer.AddActor(actorVolume)
+
+vtk_show(renderer, 800, 800)
+```
+
+Note the one and only different being the following line that adds this newly created clipping plane to the volume mapper:
+
+```
+mapperVolume.AddClippingPlane(planeClip)
+```
+
+The result of the previous snippet can then be seen in the next figure.
+
+![](figure03.png)
+
+Now while still not particularly pretty, at least we can see a little more 
+
+### vtkVolumeTextureMapper2D
+Now since I'd like at least one pretty picture for this post I'll show you how to perform volume rendering with another of VTK's volume mappers, particularly the [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) class.
+
+This class uses [texture-based volume rendering](http://en.wikipedia.org/wiki/Volume_rendering#Texture-based_volume_rendering) which happens entirely on the GPU side and generates much prettier, IMHO, renders in very little time. Let's see the code:
+
+```
+mapperVolume = vtk.vtkVolumeTextureMapper2D()
+mapperVolume.SetInput(imdataBrainSeg)
+mapperVolume.AddClippingPlane(planeClip)
+
+actorVolume = vtk.vtkVolume()
+actorVolume.SetMapper(mapperVolume)
+actorVolume.SetProperty(propVolume)
+
+renderer = createDummyRenderer()
+renderer.AddActor(actorVolume)
+
+vtk_show(renderer, 800, 800)
+```
+
+As you can see, the only difference from the above code and the snippets we saw before is that `mapperVolume` is now of type [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) instead of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html). Also, you may notice we're not defining any ray-casting functions as this isn't how this class operates. Apart from those differences, the remainder of the code is identical to before. The results can be seen in the following figure.
+
+![](figure04.png)
+
+## Outro
+Much like segmentation, volume rendering is a hit-n-miss process. Defining the transfer functions, choosing the right lighting/shading volume properties, choosing and configuring the appropriate volume mapper etc etc. All these things are pivotal to the result of the rendering and can make or break it.
+
+You can, and should, experiment with the different settings till the cows come home (or until you're satisfied with the result). Don't forget to play with the different ray-casting functions that can be applied to the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. Also, before I conclude I'd like to draw your attention to a couple more volume-mapping classes you can play around with:
+
+- ['vtkGPUVolumeRayCastMapper'](http://www.vtk.org/doc/nightly/html/classvtkGPUVolumeRayCastMapper.html): An 'allegedly' GPU version of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class which just didn't want to work 
+- [vtkFixedPointVolumeRayCastMapper](http://www.vtk.org/doc/nightly/html/classvtkFixedPointVolumeRayCastMapper.html): A good replacement for the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. Unlike[`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) it supports any data type, multi-component image data, and is implemented with multi-threading thus being much faster. It comes with a couple restrictions, e.g., only supports the 'interpolate-first' ray-casting approach which doesn't produce nice results with this dataset hence I didn't use it here.
+- 
 
 ## Links & Resources
 
