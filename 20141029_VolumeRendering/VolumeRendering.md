@@ -4,6 +4,7 @@ Date: Friday October 29th, 2014
 Tags: Python, IPython Notebook, VTK, Medical Image Processing, Volume Rendering
 Categories: Image Processing, Visualization, IO, VTK
 
+In this post I will demonstrate volume rendering of 3D image data in VTK. This will include loading and casting a segmented label-field, defining appropriate color and opacity transfer functions, setting volume properties, and performing volume rendering with different VTK classes, e.g., ray-casting or texture-mapping, which are implemented either on the CPU or GPU.
 
 <!--more-->
 
@@ -12,30 +13,36 @@ Categories: Image Processing, Visualization, IO, VTK
 # Introduction
 
 ## Background
-Some of you might have read my [previous post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/). Well in that post we performed an automatic segmentation of the bone-structures in a CT dataset and extracted a 3D surface depicting those structures. You might remember that same skull model that was used later in my [previous post about ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/).
+Some of you might have read my [previous post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/). Well in that post we performed an automatic segmentation of the bone-structures in a CT dataset and extracted a 3D surface depicting those structures. You might remember that same skull model was used later in my [post about ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/).
 
-Well the 'problem' with those surface models is that they're exactly that, surfaces! Essentially they're 2D surfaces arranged in a 3D space but they're entirely hollow. Take a look at the figure below:
+Well the 'problem' with those surface models is that they're exactly that, surfaces! Essentially they're 2D surfaces arranged in a 3D space but they're entirely hollow. Take a look at the figure below.
 
-![3D surface model of a human skull (left), a clipped depiction through it (center), and a slice through its center (right)](figure01.png)
+![(From left to right) 3D surface model of a human skull, a clipped depiction, and a slice through its center.](figure01.png)
 
 As you can see, what we've got here is two surfaces defining a 'pseudo-volume' but there's nothing in them which becomes obvious when we clip/slice through them. The clipping and slicing in the above figure was performed in [ParaView](http://www.paraview.org/) using the [STL model of the skull](https://bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/bones.stl) which was used in the [previous post about ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/).
 
 However, it is often the case that we want to visualize the entirety of a 3D volume, i.e., all the data that lies beneath the surface (yes, that was another one of my puns). Well, in that case we need to resort to a technique aptly termed ['volume rendering'](http://en.wikipedia.org/wiki/Volume_rendering).
 
-Per the [VTK User's Guide](http://www.kitware.com/products/books/vtkguide.html),  "volume rendering is a term used to describe a rendering process applied to 3D data where information exists throughout a 3D space instead of simply on 2D surfaces defined in 3D space". Now, volume rendering is a inordinately popular topic in graphics and visualization. As a result, its one of the few topics in VTK that's surprisingly well documented. Due to its popularity its also one of the actively developed areas in VTK and the material I'll be presented may well be outdated a year from now (check out this [post on VTK volume rendering updates](http://www.kitware.com/source/home/post/154) on the Kitware blog). Should you want to learn more about volume rendering, and there's lots to learn, I've arrayed a number of resource links at the end of this post.
+Per the [VTK User's Guide](http://www.kitware.com/products/books/vtkguide.html),  "volume rendering is a term used to describe a rendering process applied to 3D data where information exists throughout a 3D space instead of simply on 2D surfaces defined in 3D space". Now, volume rendering is a inordinately popular topic in graphics and visualization. As a result, its one of the few topics in VTK that's surprisingly well documented. Due to its popularity its also one of the actively developed areas in VTK (check out this [post on VTK volume rendering updates](http://www.kitware.com/source/home/post/154) on the Kitware blog). Should you want to learn more about volume rendering, and there's lots to learn, I've arrayed a number of resource links at the end of this post.
 
 ### The Dataset: Brain Atlas
-[Today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip) comes from a project entitled ['Multi-modality MRI-based Atlas of the Brain'](http://www.spl.harvard.edu/publications/item/view/2037) by Halle et al. and it is currently available in the [Publication Database hosted by Harvard's Surgical Planning Laboratory (SPL)](https://www.spl.harvard.edu/publications/pages/display/?entriesPerPage=50&collection=1). In a nutshell, this project provides us with a very nicely segmented labelfield of the human brain with something like 150 distinguishable brain structures, along with the original medical image data.
+[Today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip) comes from a project entitled ['Multi-modality MRI-based Atlas of the Brain'](http://www.spl.harvard.edu/publications/item/view/2037) by Halle et al. and it is currently available in the [Publication Database hosted by Harvard's Surgical Planning Laboratory (SPL)](https://www.spl.harvard.edu/publications/pages/display/?entriesPerPage=50&collection=1). In a nutshell, this project provides us with a very nicely segmented label-field of the human brain with something like 150 distinguishable brain structures, along with the original medical image data.
 
-What I did was download [this](https://www.spl.harvard.edu/publications/bitstream/download/5276) version of the atlas, which I then modified and boiled down to a compressed `.mha` file using [3DSlicer](http://www.slicer.org/). Unlike the [MHD format](http://www.itk.org/Wiki/MetaIO/Documentation), which was discussed in the [previous post about multi-modal segmentation](http://pyscience.wordpress.com/2014/11/02/multi-modal-image-segmentation-with-python-simpleitk/), this `.mha` file contains both the header and binary image data within the same file. In addition, I modified the accompanying color-file, which is essentially a [CSV file](http://en.wikipedia.org/wiki/Comma-separated_values) listing every index in the labelfield along with the name of the represented brain structure and a suggested RGB color.
+What I did was download [this](https://www.spl.harvard.edu/publications/bitstream/download/5276) version of the atlas, which I then relabeled, resampled to make the resulting renderings prettier, and boiled it down to a compressed `.mha` file. Unlike the [MHD format](http://www.itk.org/Wiki/MetaIO/Documentation), which was discussed in the [previous post about multi-modal segmentation](http://pyscience.wordpress.com/2014/11/02/multi-modal-image-segmentation-with-python-simpleitk/), this `.mha` file contains both the header and binary image data within the same file. In addition, I modified the accompanying color-file, which is essentially a [CSV file](http://en.wikipedia.org/wiki/Comma-separated_values) listing every index in the label-field along with the name of the represented brain structure and a recommended RGB color.
 
 What you need to do is download [today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip), and extract the contents of the `.zip` file alongside [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb).
 
 ## Summary
+The purpose of today's post isn't to teach you everything there's to know about volume rendering in VTK. Volume rendering is actually a pretty immense topic and even if I knew everything there was to teach, which I don't, it would take a book-chapter-sized post to do so.
+
+What I intend to do today is equip you with the tools and knowhow to perform volume rendering of your own image data, thus giving you another view into your data. Therefore, this post is merely meant as an introduction.
+
+I will start by loading and casting the label-field in [today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip) to make it compatible with the volume-mapping classes I'll be using. Then I'll be defining color and opacity transfer functions, the most important part of the entire volume rendering process since these functions define how the resulting rendering is going to look. Once these are defined, I'll demonstrate volume rendering with some of the different volume mapping classes offered by VTK and show you their results.
 
 ---
 
 # Volume Rendering with Python and VTK
+Should you want to try out the presented code yourself then you should download [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb) and [dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip), which should be extracted alongside the notebook.
 
 ## Imports
 As always, we'll be starting with the imports:
@@ -52,7 +59,7 @@ I know I've said in pretty much every post pertaining to VTK but if you don't ha
 The following 'helper-functions' are defined at the beginning of [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb) and used throughout:
 
 - `vtk_show(renderer, width=400, height=300)`: This function allows me to pass a [`vtkRenderer`](http://www.vtk.org/doc/nightly/html/classvtkRenderer.html) object and get a PNG image output of that render, compatible with the IPython Notebook cell output. This code was presented in [this past post about VTK integration with an IPython Notebook](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/).
-- `createDummyRenderer()`: A very simple function that just creates a `vtkRenderer` object and sets some basic properties, applicable only to this post's rendering purposes. As we'll be rendering several different scenes I thought it'd be simpler to just create a new renderer/scene for every case rather than removing/adding actors all the time, thus making each rendering independent from its preceding ones.
+- `createDummyRenderer()`: A very simple function, that just creates a `vtkRenderer` object, sets some basic properties, and configures the camera for this post's rendering purposes. As we'll be rendering several different scenes I thought it'd be simpler to just create a new renderer/scene for every case rather than removing/adding actors all the time, thus making each rendering independent from its preceding ones. The code included in this function has been previously detailed in [this previous post about ray-tracing](http://pyscience.wordpress.com/2014/10/05/from-ray-casting-to-ray-tracing-with-python-and-vtk/) and [this previous post about surface extraction](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/).
 - `l2n = lambda l: numpy.array(l)` and `n2l = lambda n: list(n)`: Two simple `lambda` functions meant to quickly convert a `list` or `tuple` to a `numpy.ndarray` and vice-versa. These function were first used in [this past post about ray-tracing with VTK](http://pyscience.wordpress.com/2014/10/05/from-ray-casting-to-ray-tracing-with-python-and-vtk/).
 
 ## Options
@@ -69,12 +76,12 @@ filenameColorfile = "./nac_brain_atlas/colorfile.txt"
 volOpacityDef = 0.25
 ```
 
-The two options `filenameSegmentation` and `filenameColorfile` simply show the location of the `.mha` file and the 'colorfile' in [today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip) the contents of which you should have already extracted alongside [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb).
+The two options `filenameSegmentation` and `filenameColorfile`, simply show the location of the `.mha` file and the `.txt` 'colorfile' in [today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip), the contents of which you should have already extracted alongside [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb).
 
-The third option `volOpacityDef` comes into play later when we're defining the opacity transfer-function for the volume-mappers but all you need to know is that this will be the baseline opacity of all rendered brain-structures.
+The third option, `volOpacityDef`, comes into play later when we're defining the opacity transfer-function for the volume-mappers but all you need to know now, is that this will be the baseline opacity of all rendered brain-structures.
 
 ## Image-Data Input
-Before we start rendering we obviously need to load the label-field under the provided `.mha` file. VTK has inherent support for (un)compressed MetaImage in either the `.mhd` or `.mha` formats. Reading them is performed through the `vtkMetaImageReader` class. Let's see how its done:
+Firstly, we obviously need to load the label-field under the provided `.mha` file. VTK has inherent support for (un)compressed MetaImage in either the `.mhd` or `.mha` formats. Reading them is performed through the `vtkMetaImageReader` class. Here's how its done:
 
 ```
 reader = vtk.vtkMetaImageReader()
@@ -88,7 +95,7 @@ castFilter.Update()
 imdataBrainSeg = castFilter.GetOutput()
 ```
 
-We initially create a new [`vtkMetaImageReader`](http://www.vtk.org/doc/nightly/html/classvtkMetaImageReader.html) object under `reader` and set the filename from which to read (which was defined as `filenameSegmentation` in the `Options`). By itself, this class would read the properties of the image stored in the file's header as well as the image data itself and create a new [`vtkImageData`](http://www.vtk.org/doc/nightly/html/classvtkImageData.html) containing both. So far so good.
+We initially create a new [`vtkMetaImageReader`](http://www.vtk.org/doc/nightly/html/classvtkMetaImageReader.html) object under `reader` and set the filename from which to read, which was defined as `filenameSegmentation` in the `Options`. By itself, this class would read the properties of the image stored in the file's header as well as the image data itself and create a new [`vtkImageData`](http://www.vtk.org/doc/nightly/html/classvtkImageData.html) containing both. So far so good.
 
 Then, a little trickery :). As you'll see later on, one of the classes we'll be using for volume-rendering will be the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. While you won't see it anywhere in the class' documentation, this class only works with `unsigned char` and `unsigned short` data types and chances are, and were in our case, that your data isn't in that type. Therefore, we need to cast it :).
 
@@ -96,7 +103,7 @@ Thankfully, casting the data type of a [`vtkImageData`](http://www.vtk.org/doc/n
 
 > I've talked about the VTK pipeline in previous posts but I think this is a good place for a long-winded reminder. As you can see, we haven't yet called the`Update` method in the `reader` object. Therefore, at this point we haven't actually read the image data but merely prepared the `reader` to do so. The idea is to read in that data and immediately cast it rather than reading it, keeping a unnecessary copy of the un-cast image, and then another copy of the cast one. That's why we used the `SetInputConnection` method of the `castFilter` and the `GetOutputPort` of the `reader`. Once we call `Update` on the `castFilter` it will ask the `reader` to `Update` himself, thus reading the data, and pass a pointer to its newly acquired output, i.e., the image, on which it will operate and cast.
 
-The key then is calling the appropriate method to set the desired data type of our output image. In our case we want the output image to be of `unsigned short` type so we call the `SetOutputScalarTypeToUnsignedShort` method. However, we could've set it to any type such as `float` through `SetOutputScalarTypeToFloat` or `signed int` through `SetOutputScalarTypeToInt`. Check the [`vtkImageData` docs](http://www.vtk.org/doc/nightly/html/classvtkImageData.html) to see the all such methods.
+The key then, is calling the appropriate method to set the desired data type of our output image. In our case we want the output image to be of `unsigned short` type so we call the `SetOutputScalarTypeToUnsignedShort` method. However, we could've set it to any type such as `float` through `SetOutputScalarTypeToFloat` or `signed int` through `SetOutputScalarTypeToInt`. Check the [`vtkImageData` docs](http://www.vtk.org/doc/nightly/html/classvtkImageData.html) to see the names of all such methods.
 
 Lastly, we just call `Update` on the `castFilter` which subsequently calls `Update` on `reader`, gets the 'original' image data, and casts it to a type of `unsigned short`. We retrieve that data through `GetOutput` and store it under `imdataBrainSeg`.
 
@@ -112,72 +119,74 @@ Firstly, we need to define a color transfer function, to which I'll be referring
 When dealing with label-fields with a limited number of different labels, its common to assign a unique color to each label, thus distinguishing the different tissue structures in the rendering. That's where the color-file in [today's dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip) comes in. Color-files or tissue-lists are very common in segmentations. Typically stored in a CSV format, they're simply a list where each label index is mapped to the tissue name and optionally an RGB color. The color-file in this dataset follows a very simple format like this:
 
 ```
-0,background,0,0,0,0
-2,white_matter_of_left_cerebral_hemisphere,245,245,245,255
-4,left_lateral_ventricle,88,106,215,255
+0,background,0,0,0
+1,white_matter_of_left_cerebral_hemisphere,245,245,245
+2,left_lateral_ventricle,88,106,215
+3,temporal_horn_of_left_lateral_ventricle,88,106,215
 ...
 ```
 
-The first integer is the label index in the same way it appears within the image data. This is then followed by the name of that tissue and four integer values between `0` and `255` for the RGBA where the 'A' is supposed to represent opacity but as you may see in the file the 'A' is constantly '255' so we'll have to deal with opacity ourselves later.
+The first integer is the label index, the same way it appears within the image data. That is followed by the name of that tissue and three integer values between `0` and `255` for the RGB color.
 
 While we could simply read-in that data with the `readlines` method of Python's built-in [`file` class](https://docs.python.org/2/library/stdtypes.html#file-objects) let's do so using the [`csv`](https://docs.python.org/2/library/csv.html) Python package instead:
 
 ```
+import csv
 fid = open(filenameColorfile, "r")
 reader = csv.reader(fid)
 
-dictRGBA = {}
+dictRGB = {}
 for line in reader:
-    dictRGBA[int(line[0])] = [float(line[2])/255.0,
-                              float(line[3])/255.0,
-                              float(line[4])/255.0,
-                              float(line[5])/255.0]
-
+    dictRGB[int(line[0])] = [float(line[2])/255.0,
+                             float(line[3])/255.0,
+                             float(line[4])/255.0]
 fid.close()
 ```
 
-The above snippet is really very simple and warrants very little explanation. All we do is loop through each entry read from the colorfile and create a dictionary `dictRGBA` where the index-label acts as the `key` and the `value` is a list with the RGB color assigned to that tissue. Note that we're skipping the tissue name and more importantly that we're 'normalizing' the color values to a value between `0.0` and `1.0` as this is the range that VTK expects. At this point we're ready to define the 'color function' in VTK:
+The above snippet is really very simple and warrants very little explanation. All we do is loop through each entry read from the colorfile and create a dictionary `dictRGB` where the index-label acts as the `key` and the `value` is a list with the RGB color assigned to that tissue. 
+
+Note that we're skipping the tissue name and more importantly that we're 'normalizing' the color values to a value between `0.0` and `1.0` as this is the range that VTK expects. At this point we're ready to define the 'color function' in VTK:
 
 ```
 funcColor = vtk.vtkColorTransferFunction()
 
-for idx in dictRGBA.keys():
+for idx in dictRGB.keys():
     funcColor.AddRGBPoint(idx, 
-                          dictRGBA[idx][0],
-                          dictRGBA[idx][1],
-                          dictRGBA[idx][2])
+                          dictRGB[idx][0],
+                          dictRGB[idx][1],
+                          dictRGB[idx][2])
 ```
 
-As you can see we first create a new [`vtkColorTransferFunction`](http://www.vtk.org/doc/nightly/html/classvtkColorTransferFunction.html) under `funcColor`, which allows us to create that label index-color map we discussed previously. Then we simply loop through all keys in the `dictRGBA` dictionary created prior, i.e., all label indices, and use the `AddRGBPoint` method to add a point with that label index and the matching RGB color.
+As you can see we first create a new [`vtkColorTransferFunction`](http://www.vtk.org/doc/nightly/html/classvtkColorTransferFunction.html) under `funcColor`, which allows us to create that label index-color map we discussed previously. Then we simply loop through all keys in the `dictRGB` dictionary created prior, i.e., all label indices, and use the `AddRGBPoint` method to add a point with that label index and the matching RGB color.
 
 > The [`vtkColorTransferFunction`](http://www.vtk.org/doc/nightly/html/classvtkColorTransferFunction.html) is a function which includes interpolation routines in order to define in-between colors should these be required by the volume mapper. Thus, while we've defined given colors for given label indices, this value can return in-between colors as well by interpolating between the pre-defined points. As volume rendering involves plenty of interpolation the pixel in the rendering will most likely have values in between those defined by the label indices. This is were the transfer function comes in and hides that complexity.
 
 #### Scalar opacity function
-Now that the color-function has been defined we need to define a scalar opacity function. This will work in a similar manner with the difference that we'll use it to simply match each label to an opacity value. 
+Now that the color-function has been defined we need to define a scalar opacity function. This will work in a similar manner with the difference being that we'll use it to simply match each label to an opacity value. 
 
 > The reason we're calling this a 'scalar' opacity function is that it will assign a given opacity to all pixels with a certain value, i.e., all pixels within the same label in our case will have the same opacity.
 
 However, as we don't have any pre-defined opacity values for the different tissues let's set all opacities to the single value `volOpacityDef` which was defined in the *Options*:
 
 ```
-funcOpacity = vtk.vtkPiecewiseFunction()
+funcOpacityScalar = vtk.vtkPiecewiseFunction()
 
-for idx in dictRGBA.keys():
-    funcOpacity.AddPoint(idx, volOpacityDef if idx<>0 else 0.0)
+for idx in dictRGB.keys():
+    funcOpacityScalar.AddPoint(idx, volOpacityDef if idx<>0 else 0.0)
 ```
 
 Note that the opacity function is defined through the [`vtkPiecewiseFunction`](http://www.vtk.org/doc/nightly/html/classvtkPiecewiseFunction.html) as it simply defines a 1-1 map. Also notice the usage of the `AddPoint` method to add new points. 
 
-What's you should pay attention here is the fact that we're assigning an opacity of `0.0` to the label index `0`. What this means is that we're making background entirely invisible (otherwise we'd just see one massive blackish block around our rendering).
+What's you should pay attention to here, is the fact that we're assigning an opacity of `0.0` to the label index `0`. What this means is that we're making the `background`, i.e., the black empty space around the segmentation, entirely invisible (otherwise we'd just see one massive blackish block around our rendering).
 
 Now this is the part where volume rendering becomes cumbersome. What we did above, i.e., dumbly assign a fixed opacity to all labels will not result in a particularly pretty rendering. Normally, we would have assigned low opacity values to the outmost tissues and higher values to the innermost ones, thus allowing us a clear view of what's inside. This is the 'art' part of volume rendering and what you should play around with if you want to get sexy renderings out of the process :).
 
 #### Gradient opacity function
-At this point we have both the color-function and the scalar opacity-function settled. Having these we could jump straight into defining some basic volume properties and then onto volume rendering. However, I wanted to bring your attention to one more function you can define for even sexier rendering results.
+At this point we have both the color-function and the scalar opacity-function settled. Having these, we could jump straight into defining some basic volume properties and then onto volume rendering. However, I wanted to bring your attention to one more function you can define for even sexier rendering results.
 
-As stated above, the scalar opacity function simply assigns an opacity value per pixel-intensity, or to simplify in our case, tissue. However, that typically results in rather homogeneous looking renderings where the outer tissues dominate the image (unless hidden with a low opacity value). 
+As stated above, the scalar opacity function simply assigns an opacity value per pixel-intensity, or in our case label-index. However, that typically results in rather homogeneous looking renderings where the outer tissues dominate the image (unless hidden with a low opacity value). 
 
-Here's where gradient opacity functions come into play. Through such a function we map the scalar spatial gradient, i.e., the degree at which the scalar changes through space, to an opacity multiplier. These gradients tend to be small while 'traveling' through a homogeneous region, e.g., within a tissue, while they became larger when crossing between different tissues. Thus through such a function we can make the 'inside' of tissues rather transparent while making the boundaries between tissues more prominent, giving a clearer picture of the entire volume.
+Here's where gradient opacity functions come into play. Through such a function we map the scalar spatial gradient, i.e., the degree at which the scalar changes through space, to an opacity multiplier. These gradients tend to be small while 'traveling' through a homogeneous region, e.g., within a tissue, while they became larger when crossing between different tissues. Thus, through such a function we can make the 'inside' of tissues rather transparent while making the boundaries between tissues more prominent, giving a clearer picture of the entire volume.
 
 Here's the more or less arbitrary function I've defined in this case:
 
@@ -189,12 +198,14 @@ funcOpacityGradient.AddPoint(5,   0.1)
 funcOpacityGradient.AddPoint(100,   1.0)
 ```
 
-As you can see this function is again defined through a [`vtkPiecewiseFunction`](http://www.vtk.org/doc/nightly/html/classvtkPiecewiseFunction.html) object. Again, this function was pretty much arbitrary as I didn't want to spend hours defining optimal opacities and multipliers for the purposes of this post but rather introduce you to the mechanics of it all.
+As you can see, this function is again defined through a [`vtkPiecewiseFunction`](http://www.vtk.org/doc/nightly/html/classvtkPiecewiseFunction.html) object. Again, this function was pretty much arbitrary as I didn't want to spend hours defining optimal opacities and multipliers for the purposes of this post but rather introduce you to the mechanics of it all.
 
-Through the above function, pixels with a low gradient of up to `1.0` will have their opacity multiplied by `0.0`. Pixels with a gradient between `1` and `5` will get a opacity multipler between `0.0` and  `0.1`, while pixel values above `5` will get a multiplier on the slope up to `1.0`. ???
+Through the above function, pixels with a low gradient of up to `1.0` will have their opacity multiplied by `0.0`. Pixels with a gradient between `1` and `5` will get a opacity multipler between `0.0` and  `0.1`, while pixel values above `5` will get a multiplier on the slope up to `1.0`. 
+
+However, the above makes little sense for our dataset since label indices don't have any physical meaning, they're just arbitrary numbers. Therefore a gradient of `2.0` may just mean going between label `1` to label `2`. This type of opacity function would make much more sense if we were dealing with non-segmented image data where the different tissues display a given range of values, e.g. in CT. In any case, just keep the mechanics of gradient opacity in mind for your own volume rendering experiments.
 
 ### Volume Properties
-I promise the hardest part's over. I just feel like I should remind you that the definition of transfer function is what makes or breaks the result of the volume rendering so expect to spend the majority of your time experimenting with those aspects.
+I promise the hardest part is over. I just feel like I should remind you that the definition of transfer function is what makes or breaks the result of the volume rendering so expect to spend the majority of your time experimenting with those aspects.
 
 Now let's define the basic properties of the volume:
 
@@ -207,9 +218,9 @@ propVolume.SetGradientOpacity(funcOpacityGradient)
 propVolume.SetInterpolationTypeToLinear()
 ```
 
-As you can see, the whole thing comes down to creating and configuring a [`vtkVolumeProperty`](http://www.vtk.org/doc/nightly/html/classvtkVolumeProperty.html) object which *"represents the common properties for rendering a volume"*. For the purposes of this post I'm turning shading off as I would otherwise need to delve into convoluted lighting math and mechanics. 
+As you can see, the whole thing comes down to creating and configuring a [`vtkVolumeProperty`](http://www.vtk.org/doc/nightly/html/classvtkVolumeProperty.html) object which *"represents the common properties for rendering a volume"*. For the purposes of this post, I'm turning shading off as I would otherwise need to delve into convoluted lighting math and mechanics. 
 
-Subsequently, we assign the three transfer functions to the volume properties through the `SetColor`, `SetScalarOpacity`, and `SetGradientOpacity` methods and the `funcColor`, `funcOpacityScalar`, and `funcOpacityGradient` functions we defined before. 
+We assign the three transfer functions to the volume properties through the `SetColor`, `SetScalarOpacity`, and `SetGradientOpacity` methods and the `funcColor`, `funcOpacityScalar`, and `funcOpacityGradient` functions we defined before. 
 
 Lastly, we have the type of interpolation used for this volume. Our choices here are nearest-neighbor interpolation, set through the `SetInterpolationTypeToNearest` method, and linear interpolation set through the `SetInterpolationTypeToLinear` method. Typically, when dealing with discrete data, as is the label-field in our case, we would chose nearest-neighbor interpolation as then we wouldn't introduce 'new' values that don't match any of the tissues. Linear interpolation is usually employed when we have continuous data as it provides smoother transitions. However, in this case I found the renderings to be prettier with linear interpolation but feel free to experiement with this.
 
@@ -221,7 +232,7 @@ Since I'll be presenting different volume rendering examples I'll be repeating t
 ### vtkVolumeRayCastMapper
 The [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) is the 'classic' volume rendering class in VTK advertising itself as a *"slow but accurate mapper for rendering volumes"*.
 
-As its name implies the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class performs volume rendering by means of ray-casting through an appropriate ray-casting function of type ['http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastFunction.html'](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastFunction.html). 
+As its name implies the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class performs volume rendering by means of ray-casting through an appropriate ray-casting function of type [`vtkVolumeRayCastFunction`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastFunction.html). 
 
 This function can be on of the following three:
 
@@ -255,13 +266,13 @@ Next, we need to create a volume mapper. As discussed we create a new [`vtkVolum
 
 > Remember: The [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class only works with `unsigned char` and `unsigned short` data which is why we cast the image data upon loading it.
 
-Subsequently, we create a ['vtkVolume'](http://www.vtk.org/doc/nightly/html/classvtkVolume.html) object under 'actorVolume' which is the equivalent of a ['vtkActor'](http://www.vtk.org/doc/nightly/html/classvtkActor.html) but meant for volumetric data. We set the mapper to `mapperVolume` and the properties to the [`vtkVolumeProperty`](http://www.vtk.org/doc/nightly/html/classvtkVolumeProperty.html) object `propVolume` we created during the preparation.
+Subsequently, we create a [`vtkVolume`](http://www.vtk.org/doc/nightly/html/classvtkVolume.html) object under `actorVolume` which is the equivalent of a [`vtkActor`](http://www.vtk.org/doc/nightly/html/classvtkActor.html) but meant for volumetric data. We set the mapper to `mapperVolume` and the properties to the [`vtkVolumeProperty`](http://www.vtk.org/doc/nightly/html/classvtkVolumeProperty.html) object `propVolume` we created during the preparation.
 
 Lastly, we just go through the pre-rendering motions. We create a new renderer through the `createDummyRenderer` helper-function we defined in the beginning and add `actorVolume` to it before calling `vtk_show` on it. The results can be seen in the next figure.
 
-![](figure02.png)
+![Volume rendering performed with the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class.](figure02.png)
 
-Well... that looks rather crummy doesn't it? The dataset just has way too many tissues and the cerebral gyri just mix with one another, 'twas a hard customer. We could have improved the result by carefully configuring the opacity functions but that wasn't the point of this post. At the very least let's take a look through the volume so we can at least feel like we rendered a volume.
+Well... that looks rather crummy doesn't it? The dataset just has way too many tissues and the cerebral gyri just mix with one another, 'twas a hard customer. We could have improved the result by carefully configuring the opacity functions but that wasn't the point of this post. At the very least let's take a look through the volume so we can at least feel like we've rendered a volume.
 
 #### Clipping
 The [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class, and really all volume mappers I'm aware of in VTK, support clipping! In order to use clipping we first need to create a plane with the appropriate location and orientation. Here's how its done:
@@ -279,7 +290,7 @@ planeClip.SetNormal(0.0, 0.0, -1.0)
 
 The above is as simple as anything so here comes the short version: We're using the appropriate methods of the [`vtkImageData`](http://www.vtk.org/doc/nightly/html/classvtkImageData.html) to retrieve the origin coordinates, spacing, and dimensions of our image data and use the `l2n` helper-function to quickly convert those lists to `numpy.ndarray` objects allowing us to perform some math with them. Then, we calculate the center coordinates of the image data and store it under `_center`. 
 
-All we then need to is create a new [`vtkPlane`](http://www.vtk.org/doc/nightly/html/classvtkPlane.html), set its origin to the center of the image data, and its normal to the negative Z axis. Then we just repeat the volume-rendering code that we saw just before:
+All we then need to do is create a new [`vtkPlane`](http://www.vtk.org/doc/nightly/html/classvtkPlane.html), set its origin to the center of the image data, and its normal to the negative Z axis. Then we just repeat the volume-rendering code that we saw just before:
 
 ```
 funcRayCast = vtk.vtkVolumeRayCastCompositeFunction()
@@ -300,7 +311,7 @@ renderer.AddActor(actorVolume)
 vtk_show(renderer, 800, 800)
 ```
 
-Note the one and only different being the following line that adds this newly created clipping plane to the volume mapper:
+Note that the one and only difference between the above snippet and the one before it is the following line that adds this newly created clipping plane to the volume mapper:
 
 ```
 mapperVolume.AddClippingPlane(planeClip)
@@ -308,9 +319,9 @@ mapperVolume.AddClippingPlane(planeClip)
 
 The result of the previous snippet can then be seen in the next figure.
 
-![](figure03.png)
+![Clipped volume rendering performed with the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class.](figure03.png)
 
-Now while still not particularly pretty, at least we can see a little more 
+Now while still not particularly pretty, at least we can see a little more. 
 
 ### vtkVolumeTextureMapper2D
 Now since I'd like at least one pretty picture for this post I'll show you how to perform volume rendering with another of VTK's volume mappers, particularly the [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) class.
@@ -334,16 +345,28 @@ vtk_show(renderer, 800, 800)
 
 As you can see, the only difference from the above code and the snippets we saw before is that `mapperVolume` is now of type [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) instead of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html). Also, you may notice we're not defining any ray-casting functions as this isn't how this class operates. Apart from those differences, the remainder of the code is identical to before. The results can be seen in the following figure.
 
-![](figure04.png)
+![Clipped volume rendering performed with the [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) class.](figure04.png)
 
 ## Outro
 Much like segmentation, volume rendering is a hit-n-miss process. Defining the transfer functions, choosing the right lighting/shading volume properties, choosing and configuring the appropriate volume mapper etc etc. All these things are pivotal to the result of the rendering and can make or break it.
 
 You can, and should, experiment with the different settings till the cows come home (or until you're satisfied with the result). Don't forget to play with the different ray-casting functions that can be applied to the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. Also, before I conclude I'd like to draw your attention to a couple more volume-mapping classes you can play around with:
 
-- ['vtkGPUVolumeRayCastMapper'](http://www.vtk.org/doc/nightly/html/classvtkGPUVolumeRayCastMapper.html): An 'allegedly' GPU version of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class which just didn't want to work 
-- [vtkFixedPointVolumeRayCastMapper](http://www.vtk.org/doc/nightly/html/classvtkFixedPointVolumeRayCastMapper.html): A good replacement for the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. Unlike[`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) it supports any data type, multi-component image data, and is implemented with multi-threading thus being much faster. It comes with a couple restrictions, e.g., only supports the 'interpolate-first' ray-casting approach which doesn't produce nice results with this dataset hence I didn't use it here.
-- 
+- [`vtkGPUVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkGPUVolumeRayCastMapper.html): An GPU version of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class which just didn't want to work on my MacBook's NVIDIA GeForce GT 750M but worked on my desktop's GTX 750i (so don't be surprised if it doesn't work for you). Its much less customizable than its CPU counterpart and seemed to ignore the gradient opacity function but the result was still pretty so I included it below. In addition, this class is undergoing a revamping as stated in this [recent update on the topic by Kitware](http://www.kitware.com/source/home/post/154) so its good to keep it in mind.
+
+![Clipped volume rendering performed with the [`vtkGPUVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkGPUVolumeRayCastMapper.html) class.](figure05.png)
+
+- [`vtkFixedPointVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkFixedPointVolumeRayCastMapper.html): A good replacement for the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. Unlike[`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) it supports any data type, multi-component image data, and is implemented with multi-threading thus being much faster. It comes with a couple restrictions though, e.g., only supports the 'interpolate-first' ray-casting approach which doesn't produce nice results with this dataset hence I didn't present it but in case you were wondering you can see the result below. I should note that this messy result is pretty much what I got when used 'interpolate-first' with the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class.
+
+![Clipped volume rendering performed with the [`vtkFixedPointVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkFixedPointVolumeRayCastMapper.html) class.](figure06.png)
+
+- [`vtkVolumeTextureMapper3D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper3D.html): As the name implies this volume mapper perform full-3D texture mapping with the volumetric dataset. You can see the non-pretty result below but keep the class in mind. If you want to read up on the texture-mapping and the difference between 2D and 3D texture mapping I suggest you check [this article](http://idav.ucdavis.edu/~okreylos/PhDStudies/Winter2000/TextureMapping.html).
+
+![Clipped volume rendering performed with the [`vtkVolumeTextureMapper3D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper3D.html) class.](figure07.png)
+
+- [`vtkSmartVolumeMapper`](http://www.vtk.org/doc/nightly/html/classvtkSmartVolumeMapper.html): Special mention should go to this class, which is *"is an adaptive volume mapper that will delegate to a specific volume mapper based on rendering parameters and available hardware"*. This volume mapper 'checks' your input data and depending on their data type, number of components per pixel, available hardware, and whether the rendering will be interactive or still, chooses the 'best' volume mapper for the job. I should also note that this class will soon be the primary interface for volume rendering in VTK as stated in this [recent update on the topic by Kitware](http://www.kitware.com/source/home/post/154) and will continue to be updated with the entire volume-rendering arsenal VTK has to offer so keep an eye on it.
+
+Note that the above renderings, created with the corresponding classes, can be found in [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb) for your reference and experimenting. I just didn't think they were worth detailing as the code is only 1-2 lines different than the code discussed in this post.
 
 ## Links & Resources
 
@@ -359,6 +382,7 @@ Here are a few resources on volume rendering:
 - [VTK User's Guide](http://www.kitware.com/products/books/vtkguide.html): The official book on VTK by Kitware. The latest edition, 11th at the time of writing, has an entire chapter dedicated to volume rendering with VTK, while older editions have a lot of material on it as well.
 - [Introduction to Programming for Image Analysis with VTK](http://bioimagesuite.org/vtkbook/index.aspx): A great, free book on medical image processing with VTK. While it's a little outdated, the vast majority of information presented in this book is still applicable to current versions of VTK and its definitely worth a read. Chapter 12 contains a large section on volume rendering as well.
 - [CS 6630 : Scientific Visualization: Project 4 - Volume Rendering](http://www.cs.utah.edu/~ramanuja/sci_vis/prj4/REPORT.html): A nice report on volume rendering with VTK from the Utah School of Computing's 'Scientific Visualization' course. It gives a very nice overview of the different aspects of volume rendering with VTK as well as a series of scripts to reproduce the presented renderings.
+- [Interactive Volume Rendering Using 3D Texture-Mapping Hardware](http://idav.ucdavis.edu/~okreylos/PhDStudies/Winter2000/TextureMapping.html): An article on texture-mapping volume rendering and the difference between 2D and 3D texture-mapping.
 
 ### See also
 
@@ -366,8 +390,6 @@ Check out these past posts which were used and referenced today or are relevant 
 
 - [Anaconda: The crème de la crème of Python distros](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/)
 - [IPython Notebook & VTK](http://pyscience.wordpress.com/2014/09/03/ipython-notebook-vtk/)
-- [NumPy to VTK: Converting your NumPy arrays to VTK arrays and files](http://pyscience.wordpress.com/2014/09/06/numpy-to-vtk-converting-your-numpy-arrays-to-vtk-arrays-and-files/)
-- [DICOM in Python: Importing medical image data into NumPy with PyDICOM and VTK](http://pyscience.wordpress.com/2014/09/08/dicom-in-python-importing-medical-image-data-into-numpy-with-pydicom-and-vtk/)
 - [Surface Extraction: Creating a mesh from pixel-data using Python and VTK](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/)
 - [Ray Casting with Python and VTK: Intersecting lines/rays with surface meshes](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/)
 - [From Ray Casting to Ray Tracing with Python and VTK](http://pyscience.wordpress.com/2014/10/05/from-ray-casting-to-ray-tracing-with-python-and-vtk/)
