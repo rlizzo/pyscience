@@ -1,8 +1,8 @@
 Title: Volume Rendering with Python and VTK
 Author: Adamos Kyriakou
 Date: Friday October 29th, 2014
-Tags: Python, IPython Notebook, VTK, Medical Image Processing, Volume Rendering
-Categories: Image Processing, Visualization, IO, VTK
+Tags: Python, IPython Notebook, VTK, Medical Image Processing, Volume Rendering, Image Segmentation
+Categories: Image Processing, Visualization, IO, VTK, Image Segmentation
 
 In this post I will demonstrate volume rendering of 3D image data in VTK. This will include loading and casting a segmented label-field, defining appropriate color and opacity transfer functions, setting volume properties, and performing volume rendering with different VTK classes, e.g., ray-casting or texture-mapping, which are implemented either on the CPU or GPU.
 
@@ -17,7 +17,7 @@ Some of you might have read my [previous post about surface extraction](http://p
 
 Well the 'problem' with those surface models is that they're exactly that, surfaces! Essentially they're 2D surfaces arranged in a 3D space but they're entirely hollow. Take a look at the figure below.
 
-![(From left to right) 3D surface model of a human skull, a clipped depiction, and a slice through its center.](figure01.png)
+![(From left to right) 3D surface model of a human skull, a clipped depiction, and a slice through its center.](http://pyscience.files.wordpress.com/2014/11/wpid-figure012.png)
 
 As you can see, what we've got here is two surfaces defining a 'pseudo-volume' but there's nothing in them which becomes obvious when we clip/slice through them. The clipping and slicing in the above figure was performed in [ParaView](http://www.paraview.org/) using the [STL model of the skull](https://bitbucket.org/somada141/pyscience/raw/master/20140910_RayCasting/Material/bones.stl) which was used in the [previous post about ray-casting](http://pyscience.wordpress.com/2014/09/21/ray-casting-with-python-and-vtk-intersecting-linesrays-with-surface-meshes/).
 
@@ -270,7 +270,7 @@ Subsequently, we create a [`vtkVolume`](http://www.vtk.org/doc/nightly/html/clas
 
 Lastly, we just go through the pre-rendering motions. We create a new renderer through the `createDummyRenderer` helper-function we defined in the beginning and add `actorVolume` to it before calling `vtk_show` on it. The results can be seen in the next figure.
 
-![Volume rendering performed with the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class.](figure02.png)
+![Volume rendering performed with the `vtkVolumeRayCastMapper` class.](http://pyscience.files.wordpress.com/2014/11/wpid-figure021.png)
 
 Well... that looks rather crummy doesn't it? The dataset just has way too many tissues and the cerebral gyri just mix with one another, 'twas a hard customer. We could have improved the result by carefully configuring the opacity functions but that wasn't the point of this post. At the very least let's take a look through the volume so we can at least feel like we've rendered a volume.
 
@@ -319,7 +319,7 @@ mapperVolume.AddClippingPlane(planeClip)
 
 The result of the previous snippet can then be seen in the next figure.
 
-![Clipped volume rendering performed with the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class.](figure03.png)
+![Clipped volume rendering performed with the `vtkVolumeRayCastMapper` class.](http://pyscience.files.wordpress.com/2014/11/wpid-figure031.png)
 
 Now while still not particularly pretty, at least we can see a little more. 
 
@@ -345,7 +345,7 @@ vtk_show(renderer, 800, 800)
 
 As you can see, the only difference from the above code and the snippets we saw before is that `mapperVolume` is now of type [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) instead of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html). Also, you may notice we're not defining any ray-casting functions as this isn't how this class operates. Apart from those differences, the remainder of the code is identical to before. The results can be seen in the following figure.
 
-![Clipped volume rendering performed with the [`vtkVolumeTextureMapper2D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper2D.html) class.](figure04.png)
+![Clipped volume rendering performed with the `vtkVolumeTextureMapper2D` class.](http://pyscience.files.wordpress.com/2014/11/wpid-figure041.png)
 
 ## Outro
 Much like segmentation, volume rendering is a hit-n-miss process. Defining the transfer functions, choosing the right lighting/shading volume properties, choosing and configuring the appropriate volume mapper etc etc. All these things are pivotal to the result of the rendering and can make or break it.
@@ -354,15 +354,15 @@ You can, and should, experiment with the different settings till the cows come h
 
 - [`vtkGPUVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkGPUVolumeRayCastMapper.html): An GPU version of [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class which just didn't want to work on my MacBook's NVIDIA GeForce GT 750M but worked on my desktop's GTX 750i (so don't be surprised if it doesn't work for you). Its much less customizable than its CPU counterpart and seemed to ignore the gradient opacity function but the result was still pretty so I included it below. In addition, this class is undergoing a revamping as stated in this [recent update on the topic by Kitware](http://www.kitware.com/source/home/post/154) so its good to keep it in mind.
 
-![Clipped volume rendering performed with the [`vtkGPUVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkGPUVolumeRayCastMapper.html) class.](figure05.png)
+![Clipped volume rendering performed with the `vtkGPUVolumeRayCastMapper` class.](http://pyscience.files.wordpress.com/2014/11/wpid-figure051.png)
 
 - [`vtkFixedPointVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkFixedPointVolumeRayCastMapper.html): A good replacement for the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class. Unlike[`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) it supports any data type, multi-component image data, and is implemented with multi-threading thus being much faster. It comes with a couple restrictions though, e.g., only supports the 'interpolate-first' ray-casting approach which doesn't produce nice results with this dataset hence I didn't present it but in case you were wondering you can see the result below. I should note that this messy result is pretty much what I got when used 'interpolate-first' with the [`vtkVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkVolumeRayCastMapper.html) class.
 
-![Clipped volume rendering performed with the [`vtkFixedPointVolumeRayCastMapper`](http://www.vtk.org/doc/nightly/html/classvtkFixedPointVolumeRayCastMapper.html) class.](figure06.png)
+![Clipped volume rendering performed with the `vtkFixedPointVolumeRayCastMapper` class.](http://pyscience.files.wordpress.com/2014/11/wpid-figure061.png)
 
 - [`vtkVolumeTextureMapper3D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper3D.html): As the name implies this volume mapper perform full-3D texture mapping with the volumetric dataset. You can see the non-pretty result below but keep the class in mind. If you want to read up on the texture-mapping and the difference between 2D and 3D texture mapping I suggest you check [this article](http://idav.ucdavis.edu/~okreylos/PhDStudies/Winter2000/TextureMapping.html).
 
-![Clipped volume rendering performed with the [`vtkVolumeTextureMapper3D`](http://www.vtk.org/doc/nightly/html/classvtkVolumeTextureMapper3D.html) class.](figure07.png)
+![Clipped volume rendering performed with the `vtkVolumeTextureMapper3D` class.](http://pyscience.files.wordpress.com/2014/11/wpid-figure07.png)
 
 - [`vtkSmartVolumeMapper`](http://www.vtk.org/doc/nightly/html/classvtkSmartVolumeMapper.html): Special mention should go to this class, which is *"is an adaptive volume mapper that will delegate to a specific volume mapper based on rendering parameters and available hardware"*. This volume mapper 'checks' your input data and depending on their data type, number of components per pixel, available hardware, and whether the rendering will be interactive or still, chooses the 'best' volume mapper for the job. I should also note that this class will soon be the primary interface for volume rendering in VTK as stated in this [recent update on the topic by Kitware](http://www.kitware.com/source/home/post/154) and will continue to be updated with the entire volume-rendering arsenal VTK has to offer so keep an eye on it.
 
