@@ -1,7 +1,7 @@
 Title: Python access to the Cancer Imaging Archive (TCIA) through a REST API 
 Author: Adamos Kyriakou
 Date: Tuesday December 9th, 2014
-Tags: Python, IPython Notebook, Medical Image Processing, Data Mining, REST, 
+Tags: Python, IPython Notebook, Medical Image Processing, Data Mining, REST, pandas
 Categories: Data Mining, Web
 
 In this post I will talk about the Cancer Imaging Archive, a massive collection of freely available medical image data, and demonstrate how to programmatically access and retrieve that data through a Python client tapping into the provided REST API.
@@ -28,11 +28,11 @@ The image data is all accessible through the primary [TCIA 'search' interface](h
 
 This 'primary' interface allows the user to filter the existing datasets by selecting the modality, anatomical region, and collection name. A series of 'results' is then presented where the user can click an 'add to cart' icon, thus collecting all series one wants to download. This interface can be seen in the next figure.
 
-![Primary image acquisition interface for the TCIA.](figure01.png)
+![Primary image acquisition interface for the TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure01.png)
 
  Once done, one can 'checkout', i.e., download, all series by clicking the 'Manage Data Basket' button and using the 'Download Manager' button to download a little Java executable which can download all the series into a folder on your computer.
  
- ![The 'Data Basket' interface for the TCIA.](figure02.png)
+ ![The 'Data Basket' interface for the TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure02.png)
 
 #### REST API interface
 
@@ -137,7 +137,7 @@ As the different arguments of the `get_modality_values` method are all optional 
 
 Now the contents of the `strRespBodyParts` string are in a JSON format, which we can read in a myriad of ways. However, I chose to use `pandas` which has built-in JSON support and which returns a very powerful [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) object, which as we'll see later on is a godsend.  In addition, IPython Notebook has built-in support for [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) objects and displays a beautiful table which, for the above code, can be seen in the next figure. 
 
-![Table of the imaging modalities currently available in TCIA.](figure03.png)
+![Table of the imaging modalities currently available in TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure03.png)
 
 ### Query Anatomical Sites
 Another method offered by the `TCIAClient` class is `get_body_part_values` which allows us to query all anatomical sites examined in the different image data series available on TCIA. Let's see this method's signature through `help(client.get_body_part_values)` which returns the following:
@@ -159,7 +159,7 @@ pandas.io.json.read_json(strRespBodyParts)
 
 You can obviously see that the code is nearly identical to the one we used to retrieve the imaging modalities, this ain't rocket science :). The above code will display a nice table with all anatomical sites, the first 10 of which you can see in the next figure.
 
-![Table of the first 10 anatomical sites of which image data is currently available in TCIA.](figure04.png)
+![Table of the first 10 anatomical sites of which image data is currently available in TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure04.png)
 
 ### Query Collections
 Another method I should mention is `get_collection_values`. As mentioned in the introduction, *"images are organized as “Collections”, typically patients related by a common disease (e.g. lung cancer), image modality (MRI, CT, etc) or research focus."*. Querying the server for these collections is, once more, embarrassingly simple. Let's quickly take a look at the method's signature through `help(client.get_collection_values)` which returns:
@@ -220,7 +220,7 @@ What I'm doing above is returning a new [`pandas.DataFrame`](http://pandas.pydat
 
 As you can see in [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141209_TCIA/Material/TCIA.ipynb), only a handful of series fit the above criteria. A part of the displayed table can be seen in the next figure.
 
-![Partial table of the returned series fitting the selection criteria.](figure05.png)
+![Partial table of the returned series fitting the selection criteria.](http://pyscience.files.wordpress.com/2015/02/wpid-figure05.png)
 
 ### Download Series
 Now its finally time to download a series of image data. Let's first randomly choose such a series from the above table, e.g., the one on row '461', and retrieve its UID:
@@ -246,7 +246,7 @@ pandas.io.json.read_json(getResponseString(response))
 
 which will return a nice representation of the series' size in bytes and image count as shown in the next figure.
 
-![The size in bytes and image count of the selected series.](figure06.png)
+![The size in bytes and image count of the selected series.](http://pyscience.files.wordpress.com/2015/02/wpid-figure06.png)
 
 > Note: The size in bytes you see above is slightly misleading. While that is indeed the size of the image data, the series will be provided from the server as a single `.zip` archive. After personal correspondence with the TCIA admins I learned that upon request of a series, the TCIA server will start compressing the image data and streaming the `.zip` file in real-time so as to reduce transfer time. Thus, the size of the received file will naturally be smaller than the indicated series size.
 
