@@ -157,4 +157,153 @@ strRespBodyParts = getResponseString(response)
 pandas.io.json.read_json(strRespBodyParts)
 ```
 
-You can obviously see that the code is nearly identical to the one we used to retrieve the imaging modalities, this ain't rocket science :). The above code will display a nice table with all anatomical sites, part of which you can see in the next figure.
+You can obviously see that the code is nearly identical to the one we used to retrieve the imaging modalities, this ain't rocket science :). The above code will display a nice table with all anatomical sites, the first 10 of which you can see in the next figure.
+
+![Table of the first 10 anatomical sites of which image data is currently available in TCIA](figure04.png)
+
+### Query Collections
+Another method I should mention is `get_collection_values`. As mentioned in the introduction, *"images are organized as “Collections”, typically patients related by a common disease (e.g. lung cancer), image modality (MRI, CT, etc) or research focus."*. Querying the server for these collections is, once more, embarrassingly simple. Let's quickly take a look at the method's signature through `help(client.get_collection_values)` which returns:
+
+```
+Help on method get_collection_values in module tciaclient:
+
+get_collection_values(self, outputFormat='json') method of tciaclient.TCIAClient instance
+```
+
+As you can see, this method doesn't really take any parameters, apart from the format the data will be returned in. The call is as simple as follows:
+
+```
+response = client.get_collection_values()
+strRespCollections = getResponseString(response)
+
+pandas.io.json.read_json(strRespCollections)
+```
+
+While you might be tempted to ignore the collection-based filtering, and instead filter your series based on more 'tangible' parameters like the imaging modality and anatomical site, generally I wouldn't suggest it. TCIA has tons upon tons of images and if your 'series' query, which we will see below, is too generic, you will end up with tens of thousands of series in the response which the TCIA server might actually refuse to send you and timeout.
+
+Generally, I would recommend you go through the different collections listed on the [TCIA homepage](http://www.cancerimagingarchive.net/) so you can get a rough idea of where you want your data to come from :).
+
+### Query & Filter Series
+Finally, let's get to the interesting part :). Retrieving information on 'series' of image data! The method of interest here is `get_series` whose signature we can see through `help(client.get_series)`:
+
+```
+Help on method get_series in module tciaclient:
+
+get_series(self, collection=None, modality=None, studyInstanceUid=None, outputFormat='json') method of tciaclient.TCIAClient instance
+```
+
+As we can see above, we can only filter series based on 'colllection', 'modality', and UID. The latter is a unique identification number (UID) separating each series from each other. You may well argue here that filtering by anatomical site should've been allowed/included but, at least at the time of writing this, it is not. Hence, until TCIA updates their API yet again and includes it, you should filter your query by collection which is loosely associated with a given anatomical site as previously outlined :).
+
+Now let's see the query we're using in [today's notebook]():
+
+```
+response = client.get_series(modality="CT", collection="QIN-HEADNECK")
+strRespSeries = getResponseString(response)
+
+pdfSeries = pandas.io.json.read_json(strRespSeries)
+```
+
+As you can see above, we want all series under the 'QIN-HEADNECK' collection that were acquired through 'CT'. We used the same approach to get and read the server response but this time we're storing the results of the JSON data conversion into a [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) object by the name of `pdfSeries`.
+
+If you display `pdfSeries` in the IPython Notebook, you will see something like 500 series that matched the set criteria! Way more than we can quickly evaluate. Hence, let's whittle these down:
+
+```
+pdfSeries[(pdfSeries.BodyPartExamined == "HEADNECK") & 
+          (pdfSeries.Modality=="CT") & 
+          (pdfSeries.ImageCount>50) & 
+          (pdfSeries.ImageCount<200)]
+```
+
+All I'm doing above is using the fantastic indexing provided with [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) objects to return a manageable subset of the `pdfSeries` object. Again, should the above syntax seem weird to you, I sincerely suggest you look into `pandas`, it'll change the way you think about data :).
+
+What I'm doing above is returning a new [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) containing the series where the anatomical site was 'HEADNECK', the used imaging modality was 'CT', and where the series contains between 50 and 200 images. The selection criteria here are completely arbitrary but it shows you how to further filter the series with criteria not offered by the TCIA API.
+
+As you can see in [today's notebook](), only a handful of series fit the above criteria. A part of the displayed table can be seen in the next figure.
+
+![Partial table of the returned series fitting the selection criteria.](figure05.png)
+
+### Download Series
+Now its finally time to download a series of image data. Let's first randomly choose such a series from the above table, e.g., the one on row '461', and retrieve its UID:
+
+```
+strSeriesUID = pdfSeries.ix[461].SeriesInstanceUID
+```
+
+Then let's use the `get_series_size` method to see the size of this series in bytes. Using `help(client.get_series_size)` we can see this method's signature:
+
+```
+Help on method get_series_size in module tciaclient:
+
+get_series_size(self, SeriesInstanceUID=None, outputFormat='json') method of tciaclient.TCIAClient instance
+```
+
+As we can see, this method needs a series UID so lets call it using the UID we just chose:
+
+```
+response = client.get_series_size(SeriesInstanceUID=strSeriesUID)
+pandas.io.json.read_json(getResponseString(response))
+```
+
+which will return a nice representation of the series' size in bytes and image count as shown in the next figure.
+
+![The size in bytes and image count of the selected series.](figure06.png)
+
+> Note: The size in bytes you see above is slightly misleading. While that is indeed the size of the image data, the series will be provided from the server as a single `.zip` archive. After personal correspondence with the TCIA admins I learned that upon request of a series, the TCIA server will start compressing the image data and streaming the `.zip` file in real-time so as to reduce transfer time. Thus, the size of the received file will naturally be smaller than the indicated series size.
+
+Lastly, let us use the `get_image` method to finally download the image data. Through `help(client.get_image)` we can see this method's signature:
+
+```
+Help on method get_image in module tciaclient:
+
+get_image(self, seriesInstanceUid) method of tciaclient.TCIAClient instance
+```
+
+As we can see, we only need the series' UID to download the image data. All it takes to do so is the following: 
+
+```
+response = client.get_image(strSeriesUID)
+strResponseImage = getResponseString(response)
+```
+
+> Note: The process above may take a fair while depending on your bandwidth and the load the TCIA servers are under. The particular series clocks at ca. 100MB while uncompressed, and ca. 50MB when compressed so be prepared to wait a tad. Keep that in mind and don't freak out if the above takes forever to return.
+
+Finally, having the `strResponseImage` in place we can merely save it as a `.zip` file as such:
+
+```
+with open("images.zip","wb") as fid:
+    fid.write(strResponseImage)
+    fid.close()
+```
+
+which results in a nice `images.zip` file being stored in our current working directory. 
+
+Finally, we can use the [`zipfile` package](https://docs.python.org/2/library/zipfile.html) to extract the contents of our newly download `.zip` file into a folder `images` as such:
+
+```
+import zipfile
+fid = zipfile.ZipFile("images.zip")
+fid.extractall("images")
+```
+
+At this point, there's obviously tons of stuff we can do with this type of data. Check back to previous posts about reading DICOM data, segmentation, surface extraction,  volume rendering etc.
+
+## Links & Resources
+
+### Material
+Here's the material used in this post:
+
+- [IPython Notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/VolumeRendering.ipynb) with the entire process.
+- [Modified Brain Atlas Dataset](https://bitbucket.org/somada141/pyscience/raw/master/20141029_VolumeRendering/Material/nac_brain_atlas.zip) used in this post.
+
+### See also
+
+Check out these past posts which were used and referenced today or are relevant to this post:
+
+- [Anaconda: The crème de la crème of Python distros](http://pyscience.wordpress.com/2014/09/01/anaconda-the-creme-de-la-creme-of-python-distros-3/)
+- [DICOM in Python: Importing medical image data into NumPy with PyDICOM and VTK](http://pyscience.wordpress.com/2014/09/08/dicom-in-python-importing-medical-image-data-into-numpy-with-pydicom-and-vtk/)
+- [Surface Extraction: Creating a mesh from pixel-data using Python and VTK](http://pyscience.wordpress.com/2014/09/11/surface-extraction-creating-a-mesh-from-pixel-data-using-python-and-vtk/)
+- [Image Segmentation with Python and SimpleITK](http://pyscience.wordpress.com/2014/10/19/image-segmentation-with-python-and-simpleitk/)
+- [Multi-Modal Image Segmentation with Python & SimpleITK](http://pyscience.wordpress.com/2014/11/02/multi-modal-image-segmentation-with-python-simpleitk/)
+- [Volume Rendering with Python and VTK](https://pyscience.wordpress.com/2014/11/16/volume-rendering-with-python-and-vtk/)
+
+> Don't forget: all material I'm presenting in this blog can be found under the [PyScience BitBucket repository](https://bitbucket.org/somada141/pyscience).
