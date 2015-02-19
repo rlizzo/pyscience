@@ -1,4 +1,4 @@
-Title: Python access to the Cancer Imaging Archive (TCIA) through a REST API 
+Title: Python access to the Cancer Imaging Archive (TCIA) through a REST API
 Author: Adamos Kyriakou
 Date: Tuesday December 9th, 2014
 Tags: Python, IPython Notebook, Medical Image Processing, Data Mining, REST, pandas
@@ -20,7 +20,7 @@ A while back, I mentioned in my previous post about [DICOM file IO in Python](ht
 
 Per their ['about page'](http://www.cancerimagingarchive.net/about-the-cancer-imaging-archive-tcia/), TCIA is a *"large archive of medical images of cancer accessible for public download. Registering is free. All images are stored in DICOM file format. The images are organized as “Collections”, typically patients related by a common disease (e.g. lung cancer), image modality (MRI, CT, etc) or research focus."*. In a nutshell, this is a **fantastic resource** for those who delve into medical image processing and I thought it would be criminal not to promote it :).
 
-A summary of the available image 'collections' can be seen on the [TCIA homepage](http://www.cancerimagingarchive.net/), while a more comprehensive overview can be seen [here](https://wiki.cancerimagingarchive.net/display/Public/Collections). 
+A summary of the available image 'collections' can be seen on the [TCIA homepage](http://www.cancerimagingarchive.net/), while a more comprehensive overview can be seen [here](https://wiki.cancerimagingarchive.net/display/Public/Collections).
 
 #### Image acquisition interface
 
@@ -31,7 +31,7 @@ This 'primary' interface allows the user to filter the existing datasets by sele
 ![Primary image acquisition interface for the TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure01.png)
 
  Once done, one can 'checkout', i.e., download, all series by clicking the 'Manage Data Basket' button and using the 'Download Manager' button to download a little Java executable which can download all the series into a folder on your computer.
- 
+
  ![The 'Data Basket' interface for the TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure02.png)
 
 #### REST API interface
@@ -48,14 +48,14 @@ The process will include configuring and creating a 'client' to the API, perform
 # API
 
 ## API Key
-As clearly stated in the [TCIA API documentation](https://wiki.cancerimagingarchive.net/display/Public/TCIA+Programmatic+Interface+%28REST+API%29+Usage+Guide), one needs an API key to access the interface. Unfortunately, there's no automatized way to acquire such a key and one would have to email [`help@cancerimagingarchive.net`](mailto:help@cancerimagingarchive.net) and kindly ask them for one. However, I've done so already so feel free to use mine within reason to try out the interface. 
+As clearly stated in the [TCIA API documentation](https://wiki.cancerimagingarchive.net/display/Public/TCIA+Programmatic+Interface+%28REST+API%29+Usage+Guide), one needs an API key to access the interface. Unfortunately, there's no automatized way to acquire such a key and one would have to email [`help@cancerimagingarchive.net`](mailto:help@cancerimagingarchive.net) and kindly ask them for one. However, I've done so already so feel free to use mine within reason to try out the interface.
 
 Should you want to use the API extensively please acquire your own key cause I'd hate for them to ban me :D.
 
 My API key, which is included in [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141209_TCIA/Material/TCIA.ipynb), is `16ade9bc-f2fa-4a37-b357-36466a0020fc` which can be used directly with the API client, which is discussed below.
 
 ## Python Client
-The TCIA API is a typical RESTful API which works pretty straightforwardly with HTTP requests. However, should you be using Python, or Java, there's no need for you to put together your own API client code. 
+The TCIA API is a typical RESTful API which works pretty straightforwardly with HTTP requests. However, should you be using Python, or Java, there's no need for you to put together your own API client code.
 
 The TCIA folk were kind enough to put together such a client for you which is hosted under Bitbucket in the unfortunately named [`TCIA-REST-API-Example` repo](https://bitbucket.org/ashishsharma/tcia-rest-api-example). A cleaned-up Python-only subset of that repo can be found in my fork [here](https://bitbucket.org/somada141/tciapy).
 
@@ -70,12 +70,12 @@ import tciaclient
 import pandas
 ```
 
-As you can see, we start by importing `tciaclient` which contains the simple client class through which we'll access the TCIA servers. 
+As you can see, we start by importing `tciaclient` which contains the simple client class through which we'll access the TCIA servers.
 
 Next, we import `pandas`, which we'll use to very easily and cleanly read in the [`JSON`](http://en.wikipedia.org/wiki/JSON) responses as they're returned from the TCIA servers. Now if you don't know what `pandas` is/does then I can't help you, this tutorial won't focus on that but feel free to visit the official [`pandas` website](http://pandas.pydata.org/) (do it! it will change the way you use Python).
 
 ## Helper-Functions
-For the purposes of this tutorial, we're defining a single `helper-function` at the  beginning of [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141209_TCIA/Material/TCIA.ipynb) and use it throughout. 
+For the purposes of this tutorial, we're defining a single `helper-function` at the  beginning of [today's notebook](http://nbviewer.ipython.org/urls/bitbucket.org/somada141/pyscience/raw/master/20141209_TCIA/Material/TCIA.ipynb) and use it throughout.
 
 This function is `getResponseString(response)` and its code can be seen below:
 
@@ -95,7 +95,7 @@ This is super-basic Pythonic web-dev stuff but if you don't understand it don't 
 Now, when we create a new client-object we need to provide some configuration options, which I'll define a-priori so as to make their purpose clear. Take a look at the code below:
 
 ```
-# CAUTION: You can use my API key for your experiments but 
+# CAUTION: You can use my API key for your experiments but
 # please try not to get me banned :). Thanks!
 api_key = "16ade9bc-f2fa-4a37-b357-36466a0020fc"
 baseUrl="https://services.cancerimagingarchive.net/services/v3"
@@ -133,9 +133,9 @@ strRespModalities = getResponseString(response)
 pandas.io.json.read_json(strRespModalities)
 ```
 
-As the different arguments of the `get_modality_values` method are all optional we don't need to 'filter' the results so we call it without any arguments. We then merely 'read' the data stored in the `response` using the `getResponseString` helper-function and store the results, as a string, under `strRespBodyParts`.
+As the different arguments of the `get_modality_values` method are all optional we don't need to 'filter' the results so we call it without any arguments. We then merely 'read' the data stored in the `response` using the `getResponseString` helper-function and store the results, as a string, under `strRespModalities`.
 
-Now the contents of the `strRespBodyParts` string are in a JSON format, which we can read in a myriad of ways. However, I chose to use `pandas` which has built-in JSON support and which returns a very powerful [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) object, which as we'll see later on is a godsend.  In addition, IPython Notebook has built-in support for [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) objects and displays a beautiful table which, for the above code, can be seen in the next figure. 
+Now the contents of the `strRespModalities` string are in a JSON format, which we can read in a myriad of ways. However, I chose to use `pandas` which has built-in JSON support and which returns a very powerful [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) object, which as we'll see later on is a godsend.  In addition, IPython Notebook has built-in support for [`pandas.DataFrame`](http://pandas.pydata.org/pandas-docs/dev/generated/pandas.DataFrame.html) objects and displays a beautiful table which, for the above code, can be seen in the next figure.
 
 ![Table of the imaging modalities currently available in TCIA.](http://pyscience.files.wordpress.com/2015/02/wpid-figure03.png)
 
@@ -208,9 +208,9 @@ As you can see above, we want all series under the 'QIN-HEADNECK' collection tha
 If you display `pdfSeries` in the IPython Notebook, you will see something like 500 series that matched the set criteria! Way more than we can quickly evaluate. Hence, let's whittle these down:
 
 ```
-pdfSeries[(pdfSeries.BodyPartExamined == "HEADNECK") & 
-          (pdfSeries.Modality=="CT") & 
-          (pdfSeries.ImageCount>50) & 
+pdfSeries[(pdfSeries.BodyPartExamined == "HEADNECK") &
+          (pdfSeries.Modality=="CT") &
+          (pdfSeries.ImageCount>50) &
           (pdfSeries.ImageCount<200)]
 ```
 
@@ -258,7 +258,7 @@ Help on method get_image in module tciaclient:
 get_image(self, seriesInstanceUid) method of tciaclient.TCIAClient instance
 ```
 
-As we can see, we only need the series' UID to download the image data. All it takes to do so is the following: 
+As we can see, we only need the series' UID to download the image data. All it takes to do so is the following:
 
 ```
 response = client.get_image(strSeriesUID)
@@ -275,7 +275,7 @@ with open("images.zip","wb") as fid:
     fid.close()
 ```
 
-which results in a nice `images.zip` file being stored in our current working directory. 
+which results in a nice `images.zip` file being stored in our current working directory.
 
 Finally, we can use the [`zipfile` package](https://docs.python.org/2/library/zipfile.html) to extract the contents of our newly download `.zip` file into a folder `images` as such:
 
